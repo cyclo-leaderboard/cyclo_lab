@@ -15,6 +15,9 @@ import json
 from pathlib import Path
 import re
 from typing import Mapping, Sequence
+from uuid import uuid4
+
+from preview_video import is_complete_mp4
 
 import cv2
 import h5py
@@ -194,9 +197,8 @@ def _render_episode(
     output_width += output_width % 2
     output_height += output_height % 2
 
-    temporary_path = output_path.with_name(f".{output_path.stem}.partial{output_path.suffix}")
-    if temporary_path.exists():
-        temporary_path.unlink()
+    # Each render owns its temporary file, including concurrent CLI runs.
+    temporary_path = output_path.with_name(f".{output_path.stem}.{uuid4().hex}.partial{output_path.suffix}")
     writer = imageio_ffmpeg.write_frames(
         str(temporary_path),
         (output_width, output_height),
@@ -247,6 +249,9 @@ def _render_episode(
         temporary_path.unlink(missing_ok=True)
         raise
     writer.close()
+    if not is_complete_mp4(temporary_path):
+        temporary_path.unlink(missing_ok=True)
+        raise RuntimeError("Video encoder did not produce a finalized MP4.")
     temporary_path.replace(output_path)
     return EpisodePreview(episode_name, output_path.name, frame_count, output_width, output_height)
 

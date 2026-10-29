@@ -1,8 +1,9 @@
-"""Nonlinear SG2 TCP IK solvers used by the waypoint seed UI."""
+"""Nonlinear FFW TCP IK solvers used by the waypoint seed UI."""
 
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 import math
 
 import numpy as np
@@ -10,11 +11,10 @@ import torch
 
 from isaaclab.utils import math as math_utils
 
-from seed_plan import IK_SOLVER_LABELS, LAB_ROOT, joint_contract
+from seed_plan import IK_SOLVER_LABELS, joint_contract, ik_urdf_file
 
 
 MAX_LOCAL_DISTANCE_M = 0.50
-STAGED_SG2_URDF_FILE = LAB_ROOT / ".runtime/joint_waypoint_seed_ui/ffw_sg2_follower.urdf"
 MAX_ITERATIONS = 100
 MAX_JOINT_STEP_RAD = 0.08
 JOINT_LIMIT_MARGIN_RAD = 0.01
@@ -43,6 +43,7 @@ def _pin_se3(pin, position, quaternion_wxyz):
 
 @lru_cache(maxsize=8)
 def _pin_model(
+    urdf_path: str,
     side: str,
     offset_position: tuple[float, float, float],
     offset_quaternion: tuple[float, float, float, float],
@@ -51,15 +52,15 @@ def _pin_model(
         import pinocchio as pin
     except ImportError as exc:
         raise ValueError("Pinocchio is unavailable in the Isaac runner") from exc
-    if not STAGED_SG2_URDF_FILE.is_file():
+    if not Path(urdf_path).is_file():
         raise ValueError(
-            "The staged SG2 URDF is missing. Disconnect and reconnect the environment."
+            "The selected robot URDF is missing. Check the task files and reconnect."
         )
-    model = pin.buildModelFromUrdf(str(STAGED_SG2_URDF_FILE))
+    model = pin.buildModelFromUrdf(urdf_path)
     short = "l" if side == "left" else "r"
     link_frame_id = model.getFrameId(f"arm_{short}_link7")
     if link_frame_id >= len(model.frames):
-        raise ValueError("SG2 URDF does not contain the selected arm link7 frame")
+        raise ValueError("Selected robot URDF does not contain the selected arm link7 frame")
     link_frame = model.frames[link_frame_id]
     tcp_offset = _pin_se3(pin, offset_position, offset_quaternion)
     tcp_frame_id = model.addFrame(
@@ -132,7 +133,7 @@ def _make_context(env, side: str, xyz_w: list[float]) -> dict:
         [f"arm_{short}_joint[1-7]"], preserve_order=True
     )
     if len(joint_ids) != 7:
-        raise ValueError("Selected robot does not expose the expected SG2 7D arm")
+        raise ValueError("Selected robot does not expose the expected 7D arm")
     current_xyz_b, current_quaternion_b = math_utils.subtract_frame_transforms(
         robot.data.root_pos_w[0:1],
         robot.data.root_quat_w[0:1],
@@ -168,13 +169,13 @@ def estimate_advanced_q_des(env, side: str, xyz_w: list[float], solver: str) -> 
     robot = context["robot"]
     offset_position, offset_quaternion = _tcp_offset(context["sensor"])
     pin, model, tcp_frame_id = _pin_model(
-        side, offset_position, offset_quaternion
+        str(ik_urdf_file(getattr(env.cfg, "env_name", None))), side, offset_position, offset_quaternion
     )
     data = model.createData()
     q = _pin_configuration(pin, model, robot)
     arm_joint_ids = [model.getJointId(name) for name in context["joint_names"]]
     if any(joint_id == 0 for joint_id in arm_joint_ids):
-        raise ValueError("The staged SG2 URDF is missing an arm joint")
+        raise ValueError("The selected robot URDF is missing an arm joint")
     position_indices = np.asarray(
         [model.joints[joint_id].idx_q for joint_id in arm_joint_ids], dtype=int
     )
@@ -201,7 +202,7 @@ def estimate_advanced_q_des(env, side: str, xyz_w: list[float], solver: str) -> 
     )
     target_model_pose = root_from_model.inverse() * target_root_pose
 
-    _, limits = joint_contract()
+    _, limits = joint_contract(getattr(env.cfg, "env_name", None))
     lower = np.asarray(
         [limits[name][0] + JOINT_LIMIT_MARGIN_RAD for name in context["joint_names"]]
     )

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SG2 Joint Waypoint Seed</title>
+  <title>FFW Joint Waypoint Seed</title>
   <style>
     :root {
       --page-bg: #eef2f7;
@@ -46,7 +46,12 @@
     .tcp-controls label { min-width: 0; }
     .tcp-controls input, .tcp-controls select { min-width: 0; padding: 8px 7px; font-size: 12px; }
     .tcp-description { margin: 5px 0 10px; font-size: 9px; line-height: 1.4; }
-    .object-editor { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--outline); }
+    .object-details { margin-top: 14px; border-top: 1px solid var(--outline); }
+    .object-editor { padding-top: 10px; }
+    .object-details > summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; padding: 11px 2px; color: #334155; font-size: 12px; font-weight: 700; }
+    .object-details > summary::-webkit-details-marker { display: none; }
+    .object-details > summary::after { content: "⌄"; display: inline-block; color: #64748b; }
+    .object-details[open] > summary::after { transform: rotate(180deg); }
     .object-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .object-controls input { min-width: 0; padding: 7px; font-size: 11px; }
     #object-status { align-self: center; color: #64748b; font-size: 10px; }
@@ -67,6 +72,7 @@
     .joint-grid input { min-width: 0; margin-top: 3px; padding: 5px 6px; font-size: 10px; }
     .initial-value { display: block; width: 100%; min-height: 26px; margin-top: 3px; padding: 5px 6px; border: 1px solid #dbe3ed; border-radius: 8px; background: #f8fafc; color: #0f172a; font-size: 10px; font-weight: 700; white-space: nowrap; }
     .buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    #teleop-record-controls[hidden] { display: none; }
     .setup-actions { align-items: center; }
     #connection-status { align-self: center; color: #64748b; font-size: 11px; }
     button { border: 0; border-radius: 8px; padding: 9px 13px; background: #2563eb; color: white; cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; }
@@ -112,6 +118,7 @@
     .range { display: block; margin-top: 2px; color: #94a3b8; font-size: 8px; font-weight: 400; }
     .position-list { margin-top: 10px; }
     .position-row { display: grid; grid-template-columns: minmax(145px, .55fr) minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 8px 2px; border-bottom: 1px solid var(--outline); }
+    .position-row[hidden] { display: none; }
     .position-row:last-child { border-bottom: 0; }
     .position-row strong { color: #64748b; font-size: 11px; font-weight: 800; }
     .position-value { color: #0f172a; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -119,6 +126,12 @@
     .camera-card { overflow: hidden; border: 1px solid var(--outline); border-radius: 9px; background: var(--block-bg); }
     .camera-card strong { display: block; padding: 9px 11px; font-size: 11px; color: #475569; }
     .camera-card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #0f172a; }
+    .camera-card.operator .camera-viewport { aspect-ratio: 1 / 1; overflow: hidden; background: #0f172a; }
+    .camera-card.operator .camera-viewport[hidden] { display: none; }
+    .camera-card.operator img { height: 100%; aspect-ratio: auto; transform: scale(var(--operator-zoom, 1.5)); transform-origin: center; }
+    .camera-zoom { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 10px; }
+    .camera-zoom input { width: 140px; margin: 0; }
+    .camera-zoom output { min-width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
     .camera-card img[hidden] { display: none; }
     .camera-card p { margin: 0; padding: 32px 8px; text-align: center; font-size: 11px; }
     .camera-card p[hidden] { display: none; }
@@ -127,6 +140,11 @@
     #seed-video[hidden] { display: none; }
     #ik-result { white-space: pre-wrap; overflow-wrap: anywhere; padding: 9px 10px; border: 1px solid var(--outline); border-radius: 8px; background: var(--block-bg); font-size: 10px; line-height: 1.55; }
     #ik-result:empty { display: none; }
+    #teleop-status { font-size: 10px; }
+    #teleop-joints { margin-top: 10px; }
+    .teleop-joint-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 10px; }
+    .teleop-joint { padding: 6px; border: 1px solid var(--outline); border-radius: 7px; background: white; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .teleop-joint strong { display: block; font-size: 9px; color: #64748b; }
     #status { white-space: pre-wrap; padding: 11px 13px; border-radius: 8px; min-height: 38px; }
     #status.ok { color: #047857; background: #ecfdf5; }
     #status.error { color: #be123c; background: #fff1f2; }
@@ -134,21 +152,21 @@
     .hint { display: block; margin-top: 10px; }
     @media (max-width: 1150px) { .workspace { grid-template-columns: 1fr; } }
     @media (max-width: 900px) { .camera-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { .page-head { display: block; } .setup-grid, .metric-grid, .viewer-controls, .seed-export-row, .plan-save-row, .point-timing { grid-template-columns: 1fr; } .tcp-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } .joint-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .main { padding: 22px 14px; } .point header { grid-template-columns: minmax(0, 1fr) auto; } .point-memo { grid-row: 2; width: 150px; } }
+    @media (max-width: 700px) { .page-head { display: block; } .setup-grid, .metric-grid, .viewer-controls, .seed-export-row, .plan-save-row, .point-timing { grid-template-columns: 1fr; } .tcp-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } .joint-grid, .teleop-joint-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .main { padding: 22px 14px; } .point header { grid-template-columns: minmax(0, 1fr) auto; } .point-memo { grid-row: 2; width: 150px; } }
     @media (max-width: 550px) { .camera-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <main class="main">
       <header class="page-head">
-        <div><span class="eyebrow">SG2 / Isaac Sim</span><h1>Joint Waypoint Seed</h1></div>
+        <div><span class="eyebrow">FFW / Isaac Sim</span><h1>Joint Waypoint Seed</h1></div>
         <span id="runtime-badge" class="badge">Preview Idle</span>
       </header>
       <section class="panel" id="setup">
         <div class="panel-head"><h2>Setup</h2><small>Existing env · robot</small></div>
         <div class="controls setup-grid">
-          <label>Environment<select id="environment"></select></label>
-          <label>Control Rate (Hz)<input id="rate" type="number" min="1" max="120" step="1" value="60"><span id="rate-warning"></span></label>
+          <label>Environment<select id="environment"><option value="" selected></option></select></label>
+          <label>Control Rate (Hz)<input id="rate" type="number" min="1" max="120" step="1" value="15"><span id="rate-warning"></span></label>
         </div>
         <div class="buttons setup-actions"><button id="connect-env" type="button">Connect</button><button id="disconnect-env" type="button" class="delete" disabled>Disconnect</button><span id="connection-status">Checking connection…</span></div>
       </section>
@@ -159,10 +177,12 @@
             <div id="initial-joints"></div>
           </details>
           <section class="panel" id="waypoints">
-            <div class="panel-head"><h2>Waypoints</h2><small>60 Hz joint interpolation</small></div>
+            <div class="panel-head"><h2>Waypoints</h2><small>Joint interpolation</small></div>
+            <label>Save mode<select id="save-mode"><option value="waypoint">Waypoint</option><option value="teleop">Teleop Waypoint</option></select></label>
+            <div class="buttons" id="teleop-record-controls" hidden><button id="teleop-record" type="button">Record</button><button id="teleop-discard" type="button" class="secondary" disabled>Discard</button></div>
             <div id="points"></div>
             <div class="buttons"><button id="add" type="button" class="secondary">+ Point / Hold</button><button id="reset-init" type="button" class="secondary">Reset to Init</button><button id="preview-motion" type="button">Preview Motion</button></div>
-            <div class="plan-picker"><div class="plan-save-row"><label>Save Waypoints<input id="plan-filename" type="text" maxlength="80" placeholder="e.g. task000300_waypoints"></label><button id="save" type="button">Save</button></div><small id="plan-path">Save to: /home/robotis-ai/cyclo_lab/.runtime/joint_waypoint_seed_ui/plans/&lt;filename&gt;.json</small></div>
+            <div class="plan-picker"><div class="plan-save-row"><label><span id="save-label">Save Waypoints</span><input id="plan-filename" type="text" maxlength="80" placeholder="e.g. task000300_waypoints"></label><button id="save" type="button">Save</button></div><small id="plan-path">Save to: /home/robotis-ai/cyclo_lab/.runtime/joint_waypoint_seed_ui/plans/&lt;filename&gt;.json</small></div>
             <div class="plan-picker"><label>Saved Waypoints<select id="saved-plans"><option value="">Select saved waypoints</option></select></label><div class="buttons"><button id="load-plan" type="button" class="secondary">Load</button><button id="refresh-plans" type="button" class="secondary">Refresh</button></div></div>
             <div class="seed-export">
               <div class="seed-export-row"><label>Seed Export<input id="seed-folder" type="text" maxlength="80" placeholder="e.g. task000300_seed"></label><button id="accept-hdf5" type="button">Export</button></div>
@@ -180,17 +200,30 @@
             <div class="position-list">
               <div class="position-row"><strong>LEFT TCP:</strong><span class="position-value" id="left-tcp">—</span></div>
               <div class="position-row"><strong>RIGHT TCP:</strong><span class="position-value" id="right-tcp">—</span></div>
-              <div class="position-row"><strong id="object-label">OBJECT CENTER:</strong><span class="position-value" id="object-center">—</span></div>
-              <div class="position-row"><strong>TRAY CENTER:</strong><span class="position-value" id="tray-center">—</span></div>
+              <div id="object-positions"></div>
+              <div class="position-row" id="tray-center-row" hidden><strong>TRAY CENTER:</strong><span class="position-value" id="tray-center">—</span></div>
             </div>
-            <div class="object-editor">
-              <div class="object-controls">
-                <label>X (m)<input id="object-x" type="number" step="any"></label>
-                <label>Y (m)<input id="object-y" type="number" step="any"></label>
-                <label>Z (m)<input id="object-z" type="number" step="any"></label>
+            <details class="object-details">
+              <summary>Objects · initial position and rotation</summary>
+              <div class="object-editor">
+                <label>Object<select id="object-select"><option value="">Connect to select an object</option></select></label>
+                <div class="object-controls">
+                  <label>X (m)<input id="object-x" type="number" step="any"></label>
+                  <label>Y (m)<input id="object-y" type="number" step="any"></label>
+                  <label>Z (m)<input id="object-z" type="number" step="any"></label>
+                  <label>Roll (°)<input id="object-roll" type="number" step="any" min="-360" max="360"></label>
+                  <label>Pitch (°)<input id="object-pitch" type="number" step="any" min="-360" max="360"></label>
+                  <label>Yaw (°)<input id="object-yaw" type="number" step="any" min="-360" max="360"></label>
+                </div>
+                <div class="buttons"><button id="object-current" type="button" class="secondary">Use Current</button><button id="object-apply" type="button">Apply</button><span id="object-status"></span></div>
+                <div class="hint">World XYZ · metres / degrees. Apply sets the spawn pose; physics then resumes. Poses are saved with the plan.</div>
               </div>
-              <div class="buttons"><button id="object-current" type="button" class="secondary">Use Current</button><button id="object-apply" type="button">Apply</button><span id="object-status"></span></div>
-            </div>
+            </details>
+          </section>
+          <section class="panel" id="leader">
+            <div class="panel-head"><h2>Leader Teleop</h2><small>BG2 Robot State · rad</small></div>
+            <div id="teleop-joints"></div>
+            <p id="teleop-status" role="status">Connect a BG2 environment. Press a Mini Leader joystick to start or stop teleop.</p>
           </section>
           <section class="panel" id="ik">
             <div class="panel-head"><h2>TCP Target</h2><small>World XYZ · m</small></div>
@@ -219,11 +252,11 @@
         </div>
       </div>
       <section class="panel" id="cameras">
-        <div class="panel-head"><h2>Camera Preview</h2></div>
+        <div class="panel-head"><h2>Camera Preview</h2><label class="camera-zoom">Operator Zoom<input id="operator-zoom" type="range" min="1" max="2.5" step="0.1" value="1.5"><output id="operator-zoom-value">1.5×</output></label></div>
         <div class="camera-grid">
-          <div class="camera-card"><strong>Operator Left</strong><img id="camera-overhead_left" alt="Original operator left view" hidden><p id="camera-overhead_left-empty">Waiting</p></div>
-          <div class="camera-card"><strong>Operator Top</strong><img id="camera-overhead_center" alt="Original operator top view" hidden><p id="camera-overhead_center-empty">Waiting</p></div>
-          <div class="camera-card"><strong>Operator Right</strong><img id="camera-overhead_right" alt="Original operator right view" hidden><p id="camera-overhead_right-empty">Waiting</p></div>
+          <div class="camera-card operator"><strong>Operator Left</strong><div class="camera-viewport" hidden><img id="camera-overhead_left" alt="Original operator left view" hidden></div><p id="camera-overhead_left-empty">Waiting</p></div>
+          <div class="camera-card operator"><strong>Operator Top</strong><div class="camera-viewport" hidden><img id="camera-overhead_center" alt="Original operator top view" hidden></div><p id="camera-overhead_center-empty">Waiting</p></div>
+          <div class="camera-card operator"><strong>Operator Right</strong><div class="camera-viewport" hidden><img id="camera-overhead_right" alt="Original operator right view" hidden></div><p id="camera-overhead_right-empty">Waiting</p></div>
           <div class="camera-card"><strong>Left wrist</strong><img id="camera-wrist_left" alt="Left wrist camera view" hidden><p id="camera-wrist_left-empty">Waiting</p></div>
           <div class="camera-card"><strong>Head</strong><img id="camera-head" alt="Head camera view" hidden><p id="camera-head-empty">Waiting</p></div>
           <div class="camera-card"><strong>Right wrist</strong><img id="camera-wrist_right" alt="Right wrist camera view" hidden><p id="camera-wrist_right-empty">Waiting</p></div>
@@ -234,6 +267,8 @@
     let catalog;
     let latestState;
     let latestIkResult;
+    let leaderTeleopActive = false;
+    const saveMode = () => document.querySelector("#save-mode").value;
     const ikDescriptions = {
       iterative_lm: "Iterative LM repeatedly updates FK and the Jacobian while keeping the current TCP orientation.",
       posture_lm: "Posture-biased LM also prefers joints near the currently measured arm posture to reduce unnecessary joint motion.",
@@ -243,6 +278,11 @@
     let exportStarting = false;
     let lastSavedDataset = "";
     let objectPositionDirty = false;
+    let objectPoses = {};
+    let initialObjectRunId = null;
+    let initialObjectPoses = {};
+    let legacyObjectPosition = null;
+    let editedObjectName = "";
     let viewerGeneration = 0;
     const groups = [
       ["Left Arm", /^arm_l_|^gripper_l_/],
@@ -276,7 +316,14 @@
     function updatePlanPath() {
       const entered = document.querySelector("#plan-filename").value.trim() || "<filename>";
       const filename = entered.endsWith(".json") ? entered : `${entered}.json`;
-      document.querySelector("#plan-path").textContent = `Save to: /home/robotis-ai/cyclo_lab/.runtime/joint_waypoint_seed_ui/plans/${filename}`;
+      document.querySelector("#plan-path").textContent = `Save to: /home/robotis-ai/cyclo_lab/.runtime/joint_waypoint_seed_ui/plans/${saveMode() === "teleop" ? "teleop/" : ""}${filename}`;
+      updateSaveAvailability();
+    }
+    function updateSaveAvailability() {
+      const filename = document.querySelector("#plan-filename").value.trim();
+      const validName = /^[\p{L}\p{N}_-]+(?:\.json)?$/u.test(filename);
+      document.querySelector("#save").disabled = saveMode() === "teleop"
+        && (!latestState?.teleop_recording || !validName);
     }
     function objectPositionFields() {
       return ["x", "y", "z"].map(axis => document.getElementById(`object-${axis}`));
@@ -292,6 +339,85 @@
     function showObjectPosition(xyz) {
       if (!Array.isArray(xyz) || xyz.length !== 3) return;
       objectPositionFields().forEach((input, index) => { input.value = Number(xyz[index]).toFixed(6); });
+    }
+    function objectRotationFields() {
+      return ["roll", "pitch", "yaw"].map(axis => document.getElementById(`object-${axis}`));
+    }
+    function showObjectPose(pose) {
+      if (!pose) return;
+      showObjectPosition(pose.xyz_m);
+      objectRotationFields().forEach((input, i) => { input.value = Number(pose.rpy_deg?.[i] || 0).toFixed(3); });
+    }
+    function readObjectPose() {
+      const xyz_m = readObjectPosition();
+      if (!xyz_m) return null;
+      const fields = objectRotationFields();
+      if (fields.some(input => input.value.trim() === "" || !Number.isFinite(Number(input.value)) || Math.abs(Number(input.value)) > 360)) {
+        throw new Error("Enter Roll, Pitch, and Yaw in degrees between -360 and 360.");
+      }
+      return {xyz_m, rpy_deg: fields.map(input => Number(input.value))};
+    }
+    function rememberObjectPose() {
+      return structuredClone(objectPoses);
+    }
+    function renderObjectPositions(objects) {
+      const container = document.querySelector("#object-positions");
+      const names = Object.keys(objects);
+      if (JSON.stringify([...container.children].map(row => row.dataset.objectName)) !== JSON.stringify(names)) {
+        container.replaceChildren(...names.map(name => {
+          const row = document.createElement("div");
+          row.className = "position-row";
+          row.dataset.objectName = name;
+          const label = document.createElement("strong");
+          label.textContent = `${name}:`;
+          const value = document.createElement("span");
+          value.className = "position-value";
+          row.append(label, value);
+          return row;
+        }));
+      }
+      for (const row of container.children) {
+        row.querySelector(".position-value").textContent = xyz(objects[row.dataset.objectName]?.xyz_m);
+      }
+    }
+    function refreshObjectOptions(state, live) {
+      const select = document.querySelector("#object-select");
+      const runId = live ? state.run_id : null;
+      if (runId !== initialObjectRunId) {
+        initialObjectRunId = runId;
+        initialObjectPoses = live
+          ? structuredClone(state.initial_object_poses || {...(state.objects || {}), ...(state.object_poses || {})})
+          : {};
+      } else if (live && state.initial_object_poses) {
+        initialObjectPoses = structuredClone(state.initial_object_poses);
+      }
+      const objects = live ? initialObjectPoses : {};
+      renderObjectPositions(objects);
+      const names = [...new Set([...Object.keys(objects), ...Object.keys(objectPoses)])];
+      const previous = select.value;
+      if (JSON.stringify([...select.options].map(o => o.value).filter(Boolean)) !== JSON.stringify(names)) {
+        select.replaceChildren(...(names.length ? names.map(name => new Option(name, name)) : [new Option("Connect to select an object", "")]));
+        select.value = names.includes(previous) ? previous : names.includes(state.object_name) ? state.object_name : (names[0] || "");
+      }
+      if (legacyObjectPosition && live && state.object_name && !objectPoses[state.object_name]) {
+        objectPoses[state.object_name] = {xyz_m: legacyObjectPosition, rpy_deg: objects[state.object_name]?.rpy_deg || [0, 0, 0]};
+        legacyObjectPosition = null;
+      }
+      if (select.value !== editedObjectName || !objectPositionDirty) {
+        editedObjectName = select.value;
+        showObjectPose(objectPoses[editedObjectName] || objects[editedObjectName]);
+        objectPositionDirty = false;
+      }
+    }
+    function applyEnvironmentLimits() {
+      const environment = document.querySelector("#environment").value;
+      catalog.limits = catalog.environment_limits?.[environment] || catalog.default_limits;
+      for (const input of document.querySelectorAll("input[data-joint]")) {
+        const name = input.dataset.joint;
+        [input.min, input.max] = catalog.limits[name];
+        const range = input.parentElement.querySelector(".range");
+        if (range) range.textContent = `${input.min} ~ ${input.max} ${name === "lift_joint" ? "m" : "rad"}`;
+      }
     }
     function appendJointFields(container, data = {}, placeholder = "Hold") {
       for (const [label, pattern] of groups) {
@@ -511,7 +637,7 @@
           input.closest("details")?.setAttribute("open", "");
           input.classList.add("invalid");
           input.focus();
-          throw new Error(`${input.dataset.joint} is outside the SG2 URDF range ${input.min} to ${input.max}.`);
+          throw new Error(`${input.dataset.joint} is outside the selected robot URDF range ${input.min} to ${input.max}.`);
         }
       }
     }
@@ -519,7 +645,8 @@
       return {
         environment: document.querySelector("#environment").value,
         control_hz: Number(document.querySelector("#rate").value),
-        object_position_xyz_m: readObjectPosition(),
+        object_position_xyz_m: legacyObjectPosition,
+        object_poses: rememberObjectPose(),
         preview: "head",
         waypoints: [...points.children].map(card => {
           const q_des = {};
@@ -555,7 +682,7 @@
       return true;
     }
     async function refreshPlans(selectName = "") {
-      const response = await fetch("/api/plans");
+      const response = await fetch(`/api/plans?mode=${saveMode()}`);
       if (!response.ok) throw new Error("Could not load saved waypoints.");
       const result = await response.json();
       const select = document.querySelector("#saved-plans");
@@ -573,7 +700,8 @@
       select.replaceChildren(new Option("Select a saved seed", ""));
       for (const seed of result.seeds) {
         const megabytes = (seed.size_bytes / 1048576).toFixed(1);
-        const rate = Number.isFinite(Number(seed.control_hz)) ? ` · ${Number(seed.control_hz)} Hz` : "";
+        const hz = Number(seed.control_hz);
+        const rate = seed.control_hz != null && Number.isFinite(hz) && hz > 0 ? ` · ${hz} Hz` : "";
         const option = new Option(`${seed.relative}${rate} · ${megabytes} MB`, seed.relative);
         option.dataset.videoUrl = seed.video_url || "";
         select.add(option);
@@ -586,10 +714,13 @@
     function loadPlan(plan) {
       if (!catalog.environments.includes(plan.environment)) throw new Error("This plan's environment is not available.");
       document.querySelector("#environment").value = plan.environment;
+      applyEnvironmentLimits();
       document.querySelector("#rate").value = plan.control_hz;
-      objectPositionFields().forEach(input => { input.value = ""; });
-      if (plan.object_position_xyz_m) showObjectPosition(plan.object_position_xyz_m);
-      objectPositionDirty = Boolean(plan.object_position_xyz_m);
+      [...objectPositionFields(), ...objectRotationFields()].forEach(input => { input.value = ""; });
+      objectPoses = structuredClone(plan.object_poses || {});
+      legacyObjectPosition = plan.object_position_xyz_m || null;
+      editedObjectName = "";
+      objectPositionDirty = false;
       points.replaceChildren();
       for (const waypoint of plan.waypoints) addPoint(waypoint);
       updateRateWarning();
@@ -598,21 +729,105 @@
     function xyz(value) {
       return Array.isArray(value) && value.length === 3 ? value.map(number => Number(number).toFixed(3)).join("   ") : "—";
     }
+    let cameraStream = null;
+    function syncCameraStream(runId) {
+      if (cameraStream?.runId === runId) return;
+      if (cameraStream) {
+        cameraStream.controller.abort();
+        for (const url of cameraStream.urls.values()) URL.revokeObjectURL(url);
+      }
+      cameraStream = null;
+      if (!runId) return;
+      const stream = {runId, controller: new AbortController(), pending: new Map(),
+        busy: new Set(), urls: new Map()};
+      cameraStream = stream;
+      async function showLatest(label) {
+        if (stream.busy.has(label)) return;
+        stream.busy.add(label);
+        try {
+          while (cameraStream === stream && stream.pending.has(label)) {
+            const frame = stream.pending.get(label);
+            stream.pending.delete(label);
+            const img = document.getElementById(`camera-${label}`);
+            if (!img) continue;
+            const old = stream.urls.get(label);
+            const url = URL.createObjectURL(new Blob([frame.bytes], {type: "image/jpeg"}));
+            stream.urls.set(label, url);
+            img.dataset.publishedMs = frame.publishedMs;
+            img.dataset.receivedMs = Date.now();
+            img.src = url;
+            try { await img.decode(); } catch (_) {}
+            if (old) URL.revokeObjectURL(old);
+          }
+        } finally { stream.busy.delete(label); }
+      }
+      (async () => {
+        while (cameraStream === stream && !stream.controller.signal.aborted) {
+          try {
+            const response = await fetch(`/api/camera-stream?run=${encodeURIComponent(runId)}`,
+              {signal: stream.controller.signal, cache: "no-store"});
+            if (!response.ok) throw new Error("Camera stream unavailable");
+            const reader = response.body.getReader();
+            let buffer = new Uint8Array(0);
+            const decoder = new TextDecoder();
+            while (cameraStream === stream) {
+              const {value, done} = await reader.read();
+              if (done) break;
+              const combined = new Uint8Array(buffer.length + value.length);
+              combined.set(buffer); combined.set(value, buffer.length); buffer = combined;
+              while (true) {
+                let end = -1;
+                for (let i = 0; i + 3 < buffer.length; i++) {
+                  if (buffer[i] === 13 && buffer[i+1] === 10 && buffer[i+2] === 13 && buffer[i+3] === 10) { end = i; break; }
+                }
+                if (end < 0) break;
+                const header = decoder.decode(buffer.subarray(0, end));
+                const length = Number(header.match(/Content-Length:\s*(\d+)/i)?.[1]);
+                const label = header.match(/X-Camera:\s*([^\r\n]+)/i)?.[1];
+                const publishedMs = header.match(/X-Published-Ms:\s*([^\r\n]+)/i)?.[1];
+                if (!Number.isFinite(length) || length < 1 || length > 16 * 1024 * 1024 || !label) throw new Error("Invalid camera frame");
+                if (buffer.length < end + 4 + length + 2) break;
+                const bytes = buffer.slice(end + 4, end + 4 + length);
+                buffer = buffer.slice(end + 4 + length + 2);
+                // Replace pending images instead of building a playback queue.
+                stream.pending.set(label, {bytes, publishedMs});
+                showLatest(label);
+              }
+            }
+          } catch (_) {
+            if (stream.controller.signal.aborted) return;
+          }
+          if (cameraStream === stream) await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      })();
+    }
+    let stateRefreshPending = false;
     async function refreshState() {
+      if (stateRefreshPending) return;
+      stateRefreshPending = true;
       try {
         const response = await fetch("/api/state");
         const state = await response.json();
         latestState = state;
+        const teleopResponse = await fetch("/api/leader/teleop");
+        const teleop = await teleopResponse.json();
+        leaderTeleopActive = Boolean(teleop.enabled && teleop.run_id === state.run_id);
         const selected = document.querySelector("#environment").value;
         const live = ["running", "awaiting_acceptance"].includes(state.status) && state.environment === selected;
+        const teleopCapturing = live && Boolean(state.teleop_recording);
+        document.querySelector("#teleop-record").disabled = !live || teleopCapturing || Boolean(state.recording_mode);
+        document.querySelector("#teleop-discard").disabled = !teleopCapturing;
+        document.querySelector("#save-mode").disabled = teleopCapturing;
+        updateSaveAvailability();
+        renderTeleopJoints(state, live, teleop);
         const starting = state.status === "starting" && state.environment === selected;
         const active = ["running", "awaiting_acceptance", "starting"].includes(state.status);
         const failedHere = state.status === "failed" && state.environment === selected;
         const failureReason = /out of memory/i.test(state.error || "")
           ? "GPU out of memory" : (state.error || "Isaac Sim runner failed").split("\n")[0].slice(0, 160);
-        document.querySelector("#connect-env").disabled = active;
+        document.querySelector("#connect-env").disabled = active || !selected;
         document.querySelector("#disconnect-env").disabled = !active;
-        document.querySelector("#environment").disabled = active;
+        document.querySelector("#environment").disabled = active && selected === state.environment;
         document.querySelector("#connection-status").textContent = starting
           ? `${selected} · Connecting…` : live ? `${selected} · Connected` : active
             ? `${state.environment} · Connected to another env` : state.status === "stale" && state.environment === selected
@@ -625,26 +840,24 @@
         const badge = document.querySelector("#runtime-badge");
         badge.classList.toggle("live", live);
         badge.textContent = starting ? "Connecting" : state.status === "awaiting_acceptance" && live
-          ? "Awaiting Approval" : live && state.phase === "final_hold" ? "Final Pose Hold" : live ? "Preview Running" : "Preview Idle";
+          ? "Awaiting Approval" : live && state.phase === "leader_teleop" ? "BG2 Teleop"
+            : live && state.phase === "final_hold" ? "Final Pose Hold" : live ? "Preview Running" : "Preview Idle";
         document.querySelector("#pose-status").textContent = live
-          ? `${state.environment} · ${state.phase || "running"} · step ${state.step} · measured`
+          ? `${state.environment} · ${state.phase || "running"} · step ${state.step} · TCP measured / objects initial`
           : starting ? `Starting ${state.environment}…`
           : failedHere ? `Isaac Sim stopped · ${failureReason}.`
           : state.status === "running" ? `Another environment is running: ${state.environment}` : "Waiting for the selected Isaac environment.";
         document.querySelector("#left-tcp").textContent = live ? xyz(state.tcp_xyz_m?.left) : "—";
         document.querySelector("#right-tcp").textContent = live ? xyz(state.tcp_xyz_m?.right) : "—";
-        document.querySelector("#object-label").textContent = live && state.object_name ? `${state.object_name.toUpperCase()} CENTER:` : "OBJECT CENTER:";
-        document.querySelector("#object-center").textContent = live ? xyz(state.object_root_xyz_m) : "—";
-        if (live && !objectPositionDirty && Array.isArray(state.object_root_xyz_m)) {
-          showObjectPosition(state.object_root_xyz_m);
-          objectPositionDirty = true;
-        }
-        document.querySelector("#tray-center").textContent = live ? xyz(state.tray_center_xyz_m) : "—";
+        refreshObjectOptions(state, live);
+        const hasTray = live && Boolean(state.tray_name && state.tray_center_xyz_m);
+        document.querySelector("#tray-center-row").hidden = !hasTray;
+        document.querySelector("#tray-center").textContent = hasTray ? xyz(state.tray_center_xyz_m) : "—";
         const canAccept = state.status === "awaiting_acceptance" && state.environment === selected;
         const recording = live && Boolean(state.recording_mode);
         const finalizing = state.status === "finalizing" && state.environment === selected;
         const exportButton = document.querySelector("#accept-hdf5");
-        exportButton.disabled = exportStarting || starting || finalizing || (recording && !canAccept);
+        exportButton.disabled = exportStarting || starting || finalizing || teleopCapturing || (recording && !canAccept);
         exportButton.textContent = canAccept ? "Approve" : finalizing ? "Finalizing…" : recording ? "Recording…" : "Export";
         document.querySelector("#seed-folder").disabled = exportStarting || recording || finalizing;
         if (canAccept) {
@@ -659,7 +872,7 @@
           setExportProgress(45 + motion * 50, `Recording · ${state.step || 0} / ${totalSteps} steps · ${Number(state.sim_control_hz).toFixed(1)} Hz`);
         } else if (finalizing) {
           setExportProgress(98, "Finalizing HDF5…");
-        } else if (state.status === "saved" && state.environment === selected) {
+        } else if (!exportStarting && state.status === "saved" && state.environment === selected) {
           finishExport(`Saved · ${state.dataset_file}`);
         } else if (state.status === "failed" && state.environment === selected) {
           setExportProgress(0, `Export failed · ${state.error || "runner error"}`);
@@ -671,17 +884,19 @@
           refreshSeeds().catch(() => {});
         }
         updateRateWarning(state);
+        syncCameraStream(live ? state.run_id : null);
         for (const label of ["overhead_left", "overhead_center", "overhead_right", "wrist_left", "head", "wrist_right"]) {
           const img = document.getElementById(`camera-${label}`);
+          const viewport = img.closest(".camera-viewport");
           const empty = document.getElementById(`camera-${label}-empty`);
           const available = live && state.cameras?.includes(label);
           if (available) {
-            const url = `/api/camera/${label}.jpg?frame=${state.camera_frame_step}`;
-            if (img.getAttribute("src") !== url) img.src = url;
             img.hidden = false;
+            if (viewport) viewport.hidden = false;
             empty.hidden = true;
           } else {
             img.hidden = true;
+            if (viewport) viewport.hidden = true;
             img.removeAttribute("src");
             empty.hidden = false;
           }
@@ -691,6 +906,8 @@
         document.querySelector("#runtime-badge").classList.remove("live");
         document.querySelector("#runtime-badge").textContent = "Preview Unavailable";
         document.querySelector("#connection-status").textContent = "Connection unavailable";
+      } finally {
+        stateRefreshPending = false;
       }
     }
     document.querySelector("#connect-env").onclick = async () => {
@@ -701,7 +918,7 @@
         const control_hz = Number(document.querySelector("#rate").value);
         const response = await fetch("/api/runner/connect", {
           method: "POST", headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({environment, control_hz, object_position_xyz_m: readObjectPosition()})
+          body: JSON.stringify({environment, control_hz, object_position_xyz_m: legacyObjectPosition, object_poses: rememberObjectPose()})
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
@@ -726,9 +943,13 @@
       finally { await refreshState(); }
     };
     document.querySelector("#environment").onchange = () => {
+      applyEnvironmentLimits();
       latestIkResult = null;
       objectPositionDirty = false;
-      objectPositionFields().forEach(input => { input.value = ""; });
+      objectPoses = {}; legacyObjectPosition = null; editedObjectName = "";
+      initialObjectRunId = null; initialObjectPoses = {};
+      [...objectPositionFields(), ...objectRotationFields()].forEach(input => { input.value = ""; });
+      document.querySelector("#object-select").replaceChildren(new Option("Connect to select an object", ""));
       document.querySelector("#ik-add").disabled = true;
       refreshState();
     };
@@ -740,27 +961,35 @@
       document.querySelector("#ik-result").textContent = "";
       document.querySelector("#ik-description").textContent = ikDescriptions[solver] || "";
     };
-    for (const input of objectPositionFields()) {
+    for (const input of [...objectPositionFields(), ...objectRotationFields()]) {
       input.addEventListener("input", () => { objectPositionDirty = true; });
     }
+    document.querySelector("#object-select").onchange = () => {
+      editedObjectName = document.querySelector("#object-select").value;
+      objectPositionDirty = false;
+      const live = latestState?.environment === document.querySelector("#environment").value;
+      showObjectPose(objectPoses[editedObjectName] || (live ? initialObjectPoses[editedObjectName] : null));
+      document.querySelector("#object-status").textContent = "";
+    };
     document.querySelector("#object-current").onclick = () => {
       const selected = document.querySelector("#environment").value;
-      const xyz = latestState?.environment === selected ? latestState.object_root_xyz_m : null;
-      if (!Array.isArray(xyz)) {
-        document.querySelector("#object-status").textContent = "No measured object position is available.";
+      const pose = latestState?.environment === selected ? latestState.objects?.[editedObjectName] : null;
+      if (!pose) {
+        document.querySelector("#object-status").textContent = "No measured object pose is available.";
         return;
       }
-      showObjectPosition(xyz);
+      showObjectPose(pose);
       objectPositionDirty = true;
-      document.querySelector("#object-status").textContent = "Current position copied.";
+      document.querySelector("#object-status").textContent = "Current pose copied.";
     };
     async function applyObjectPosition() {
         const environment = document.querySelector("#environment").value;
-        const xyz_m = readObjectPosition();
-        if (!xyz_m) throw new Error("Enter Object X, Y, and Z values.");
+        const object_name = document.querySelector("#object-select").value;
+        const pose = readObjectPose();
+        if (!object_name || !pose) throw new Error("Select an object and enter its XYZ / rotation.");
         const response = await fetch("/api/object-requests", {
           method: "POST", headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({environment, xyz_m})
+          body: JSON.stringify({environment, object_name, ...pose})
         });
         const submitted = await response.json();
         if (!response.ok) throw new Error(submitted.error);
@@ -771,9 +1000,12 @@
           result = await polled.json();
           if (polled.status === 200) break;
         }
-        if (result?.id !== submitted.id) throw new Error("Object position update timed out.");
-        if (result.status !== "ok") throw new Error(result.error || "Object position update failed.");
-        return xyz_m;
+        if (result?.id !== submitted.id) throw new Error("Object pose update timed out.");
+        if (result.status !== "ok") throw new Error(result.error || "Object pose update failed.");
+        objectPoses[object_name] = pose;
+        initialObjectPoses[object_name] = pose;
+        objectPositionDirty = false;
+        return pose;
     }
     document.querySelector("#object-apply").onclick = async () => {
       const button = document.querySelector("#object-apply");
@@ -852,13 +1084,50 @@
       addPoint({duration_s: 1, q_des: latestIkResult.q_des});
       message(`Added the ${latestIkResult.solver_label} 7-joint candidate as a new point.`);
     };
+    function buildTeleopJoints() {
+      const output = document.querySelector("#teleop-joints");
+      for (const [label, pattern] of groups) {
+        const section = document.createElement("details");
+        section.className = "group";
+        const summary = document.createElement("summary");
+        summary.textContent = label;
+        const grid = document.createElement("div");
+        grid.className = "teleop-joint-grid";
+        for (const name of catalog.joints.filter(value => pattern.test(value))) {
+          const cell = document.createElement("div");
+          cell.className = "teleop-joint";
+          const title = document.createElement("strong");
+          title.textContent = name;
+          const value = document.createElement("span");
+          value.dataset.teleopJoint = name;
+          value.textContent = "—";
+          cell.append(title, value);
+          grid.append(cell);
+        }
+        section.append(summary, grid);
+        output.append(section);
+      }
+    }
+    function renderTeleopJoints(state, live, teleop) {
+      const joints = live ? state.measured_joint_pos : null;
+      for (const output of document.querySelectorAll("[data-teleop-joint]")) {
+        const name = output.dataset.teleopJoint;
+        output.textContent = Number.isFinite(joints?.[name])
+          ? `${Number(joints[name]).toFixed(4)} ${name === "lift_joint" ? "m" : "rad"}` : "—";
+      }
+      document.querySelector("#teleop-status").textContent = !live || !state.environment?.includes("FFW-BG2")
+        ? "Connect a BG2 environment. Press a Mini Leader joystick to start or stop teleop."
+        : leaderTeleopActive
+          ? state.phase === "leader_waiting" ? "Mini Leader signal paused · BG2 holds its pose."
+            : `${teleop.side === "both" ? "Both arms" : `${teleop.side} arm`} active · BG2 measured joint state · ${Number(state.sim_control_hz).toFixed(1)} Hz`
+          : "Teleop stopped · BG2 holds its measured pose. Press a Mini Leader joystick to start.";
+    }
     document.querySelector("#add").onclick = () => addPoint();
     document.querySelector("#reset-init").onclick = async () => {
       const button = document.querySelector("#reset-init");
       button.disabled = true;
       try {
         const environment = document.querySelector("#environment").value;
-        if (readObjectPosition()) await applyObjectPosition();
         const response = await fetch("/api/reset-requests", {
           method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({environment})
         });
@@ -909,14 +1178,48 @@
       try { await refreshPlans(); message("Saved waypoints refreshed."); }
       catch (error) { message(error.message, true); }
     };
+    document.querySelector("#save-mode").onchange = async () => {
+      const teleop = saveMode() === "teleop";
+      document.querySelector("#teleop-record-controls").hidden = !teleop;
+      document.querySelector("#save-label").textContent = teleop ? "Save Teleop Waypoint" : "Save Waypoints";
+      document.querySelector("#points").hidden = teleop;
+      document.querySelector("#add").hidden = teleop;
+      document.querySelector("#preview-motion").hidden = teleop;
+      document.querySelector("#plan-path").textContent = teleop
+        ? "Save to: /home/robotis-ai/cyclo_lab/.runtime/joint_waypoint_seed_ui/plans/teleop/<filename>.json"
+        : "Save to: /home/robotis-ai/cyclo_lab/.runtime/joint_waypoint_seed_ui/plans/<filename>.json";
+      await refreshPlans();
+      await refreshState();
+    };
+    document.querySelector("#teleop-record").onclick = async () => {
+      try {
+        const response = await fetch("/api/teleop/recording", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({action: "record"})});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+        message("Teleop recording started. Use Save to keep it or Discard to remove it.");
+        await refreshState();
+      } catch (error) { message(error.message, true); }
+    };
+    document.querySelector("#teleop-discard").onclick = async () => {
+      try {
+        const response = await fetch("/api/teleop/recording", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({action: "discard"})});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+        message("Teleop recording discarded.");
+        await refreshState();
+      } catch (error) { message(error.message, true); }
+    };
     document.querySelector("#load-plan").onclick = async () => {
       try {
         const name = document.querySelector("#saved-plans").value;
         if (!name) throw new Error("Select saved waypoints to load.");
-        const response = await fetch(`/api/plans/${encodeURIComponent(name)}`);
+        const response = await fetch(`/api/plans/${encodeURIComponent(name)}?mode=${saveMode()}`);
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
-        loadPlan(result.plan);
+        if (saveMode() === "teleop") {
+          document.querySelector("#environment").value = result.trajectory.environment;
+          message(`Loaded teleop trajectory: ${name} · ${result.trajectory.samples.at(-1).time_s.toFixed(2)}s`);
+        } else loadPlan(result.plan);
         document.querySelector("#plan-filename").value = name.replace(/\.json$/i, "");
         updatePlanPath();
         message(`Loaded: ${name}`);
@@ -935,8 +1238,10 @@
           document.querySelector("#recording-status").textContent = "Approval sent · finalizing HDF5…";
           return;
         }
-        validateJointInputs();
-        if (!updateRateWarning()) throw new Error("Set a control rate with integer decimation from 120 Hz physics.");
+        if (saveMode() === "waypoint") {
+          validateJointInputs();
+          if (!updateRateWarning()) throw new Error("Set a control rate with integer decimation from 120 Hz physics.");
+        }
         const folderName = document.querySelector("#seed-folder").value.trim();
         if (!folderName) throw new Error("Enter a Seed Export folder name.");
         if (!/^[\p{L}\p{N}_-]+$/u.test(folderName)) throw new Error("Use letters, numbers, underscores, or hyphens for the folder name.");
@@ -947,7 +1252,9 @@
         setExportProgress(5, "Stopping preview…");
         const response = await fetch("/api/recording/start", {
           method: "POST", headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({folder_name: folderName, plan: collect()})
+          body: JSON.stringify(saveMode() === "teleop"
+            ? {folder_name: folderName, mode: "teleop", trajectory_name: document.querySelector("#saved-plans").value}
+            : {folder_name: folderName, plan: collect()})
         });
         const submitted = await response.json();
         if (!response.ok) throw new Error(submitted.error);
@@ -980,16 +1287,17 @@
     };
     document.querySelector("#save").onclick = async () => {
       try {
-        validateJointInputs();
+        if (saveMode() === "waypoint") validateJointInputs();
         const filename = document.querySelector("#plan-filename").value.trim();
         if (!filename) throw new Error("Enter a Save Waypoints filename.");
         if (!/^[\p{L}\p{N}_-]+(?:\.json)?$/u.test(filename)) throw new Error("Use letters, numbers, underscores, or hyphens for the filename.");
-        const response = await fetch("/api/plans", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({filename, plan: collect()})});
+        const response = await fetch("/api/plans", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(saveMode() === "teleop" ? {filename, mode: "teleop"} : {filename, plan: collect()})});
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
         const name = result.saved_path.split("/").pop();
         await refreshPlans(name);
         message(`Saved: ${result.saved_path}\n${result.steps} steps / ${result.duration_s.toFixed(3)}s`);
+        await refreshState();
       } catch (error) { message(error.message, true); }
     };
     document.querySelector("#refresh-seeds").onclick = async () => {
@@ -1024,10 +1332,11 @@
         if (!response.ok) throw new Error(result.error);
         if (response.status === 202) {
           if (!result.id) throw new Error("Render job did not return an ID. Click View again.");
+          const renderJobId = result.id;
           for (let attempt = 0; attempt < 1200; attempt++) {
             await new Promise(resolve => setTimeout(resolve, 500));
             if (generation !== viewerGeneration) return;
-            const polled = await fetch(`/api/render-status?id=${encodeURIComponent(result.id)}`);
+            const polled = await fetch(`/api/render-status?id=${encodeURIComponent(renderJobId)}`);
             result = await polled.json();
             if (generation !== viewerGeneration) return;
             if (polled.status === 200 && ["ready", "error"].includes(result.status)) break;
@@ -1039,8 +1348,17 @@
         video.src = `${result.video_url}&v=${Date.now()}`;
         video.hidden = false;
         viewerStatus.textContent = `${path} · Head / Left wrist / Right wrist`;
-        await video.play().catch(() => {});
         await refreshSeeds(path);
+        viewerStatus.textContent = `${path} · Head / Left wrist / Right wrist`;
+        try {
+          await video.play();
+        } catch (error) {
+          if (error.name === "NotAllowedError") {
+            viewerStatus.textContent += " · Press Play to start.";
+          } else {
+            throw new Error(`Video playback failed: ${video.error?.message || error.message}. Click View to retry.`);
+          }
+        }
       } catch (error) { if (generation === viewerGeneration) viewerStatus.textContent = error.message; }
       finally { if (generation === viewerGeneration) button.disabled = false; }
     };
@@ -1049,14 +1367,17 @@
         const response = await fetch("/api/catalog");
         if (!response.ok) throw new Error("Could not load the environment catalog.");
         catalog = await response.json();
+        catalog.default_limits = catalog.limits;
         const select = document.querySelector("#environment");
         for (const name of catalog.environments) {
           const option = document.createElement("option");
           option.value = option.textContent = name;
           select.append(option);
         }
-        select.value = catalog.environments.find(name => name === "Cyclo-Real-WhiteRoom-Task000300-FFW-SG2-v0") || catalog.environments[0] || "";
+        select.value = "";
+        applyEnvironmentLimits();
         buildInitialJoints();
+        buildTeleopJoints();
         addPoint();
         await refreshPlans();
         await refreshSeeds();
@@ -1064,9 +1385,16 @@
         updateSeedPath();
         message(`Loaded ${catalog.environments.length} environments.`);
         refreshState();
-        setInterval(refreshState, 250);
+        setInterval(refreshState, 1000 / 15);
       } catch (error) { message(error.message, true); }
     })();
+    const operatorZoom = document.querySelector("#operator-zoom");
+    operatorZoom.oninput = () => {
+      const zoom = Number(operatorZoom.value);
+      document.querySelector("#cameras").style.setProperty("--operator-zoom", String(zoom));
+      document.querySelector("#operator-zoom-value").textContent = `${zoom.toFixed(1)}×`;
+    };
+    operatorZoom.oninput();
   </script>
 </body>
 </html>

@@ -78,7 +78,7 @@ def _estimate_local_dls(env, side: str, xyz_w: list[float]) -> dict:
     # The selected env's reset pose can intentionally sit outside Isaac Lab's
     # contracted soft range. UI q_des input is governed by the SG2 URDF limits,
     # so use the same contract for candidates instead of rejecting the reset pose.
-    _, urdf_limits = joint_contract()
+    _, urdf_limits = joint_contract(getattr(env.cfg, "env_name", None))
     raw_delta = raw_candidate - joint_pos
     joint_step_scale = 1.0
     for index, name in enumerate(joint_names):

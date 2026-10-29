@@ -1,11 +1,13 @@
-"""Isaac-free plan validation for SG2 desired-joint-position waypoints."""
+"""Isaac-free plan validation for FFW desired-joint-position waypoints."""
 
 from __future__ import annotations
 
 import ast
+import importlib.util
 import math
 import os
 from pathlib import Path
+import re
 import runpy
 import xml.etree.ElementTree as ET
 
@@ -14,7 +16,11 @@ LAB_ROOT = Path(os.environ.get("CYCLO_LAB_ROOT", Path(__file__).resolve().parent
 JOINTS_FILE = LAB_ROOT / "source/cyclo_lab/cyclo_lab/robot_specs/ffw/sg2/joints.py"
 SG2_URDF_FILE = Path(os.environ.get(
     "SG2_URDF_PATH",
-    str(LAB_ROOT.parent / "cyclo_intelligence_s2r/shared/shared/robot_configs/urdf/ffw_sg2_follower.urdf"),
+    str(LAB_ROOT.parent / "cyclo_intelligence/shared/shared/robot_configs/urdf/ffw_sg2_follower.urdf"),
+))
+BG2_URDF_FILE = Path(os.environ.get(
+    "BG2_URDF_PATH",
+    str(LAB_ROOT.parent / "cyclo_intelligence/shared/shared/robot_configs/urdf/ffw_bg2_rev4_follower.urdf"),
 ))
 REGISTRATION_ROOTS = (
     LAB_ROOT / "source/cyclo_lab/cyclo_lab/manager_based/manipulation",
@@ -29,16 +35,50 @@ IK_SOLVER_LABELS = {
 }
 
 
-def joint_contract() -> tuple[tuple[str, ...], dict[str, tuple[float, float]]]:
-    """Read SG2 19D names and URDF position limits without importing Isaac."""
+def local_robot_spec(environment: str | None = None) -> dict:
+    """Read an optional task-local robot contract without loading Isaac."""
+    match = re.search(r"-Task(\d{6})(?:-|$)", environment or "")
+    if match:
+        path = REGISTRATION_ROOTS[1] / f"task_{match[1]}" / "plugin.py"
+        if path.is_file():
+            spec = importlib.util.spec_from_file_location("_waypoint_task_contract", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            callback = getattr(module, "waypoint_robot_spec", None)
+            if callback:
+                robot = callback(environment)
+                if robot.get("robot_model") == "FFW-BG2":
+                    return {**robot, "urdf_path": os.environ.get(
+                        "BG2_URDF_PATH", robot.get("urdf_path", str(BG2_URDF_FILE))
+                    )}
+                return robot
+    if "FFW-BG2" in (environment or ""):
+        raise ValueError("This BG2 task has no waypoint robot contract.")
+    return {}
+
+
+def robot_urdf_file(environment: str | None = None) -> Path:
+    return Path(local_robot_spec(environment).get("urdf_path", SG2_URDF_FILE))
+
+
+def ik_urdf_file(environment: str | None = None) -> Path:
+    return robot_urdf_file(environment)
+
+
+def joint_contract(environment: str | None = None) -> tuple[tuple[str, ...], dict[str, tuple[float, float]]]:
+    """Read the shared 19D names and selected robot limits without Isaac."""
     definitions = runpy.run_path(str(JOINTS_FILE))
     names = tuple(definitions["FFW_SG2_ACTION_JOINT_NAMES"])
     contract_limits = dict(definitions["FFW_SG2_JOINT_POSITION_LIMITS"])
-    if not SG2_URDF_FILE.is_file():
+    local_spec = local_robot_spec(environment)
+    urdf_file = robot_urdf_file(environment)
+    if not urdf_file.is_file():
+        if local_spec:
+            raise ValueError(f"Missing task robot URDF: {urdf_file}")
         # Isaac containers may mount cyclo_lab but not cyclo_intelligence_s2r.
         # This Cyclo Lab table is documented as copied from the same follower URDF.
         return names, contract_limits
-    root = ET.parse(SG2_URDF_FILE).getroot()
+    root = ET.parse(urdf_file).getroot()
     urdf_limits = {}
     for joint in root.findall("joint"):
         name = joint.get("name")
@@ -46,20 +86,20 @@ def joint_contract() -> tuple[tuple[str, ...], dict[str, tuple[float, float]]]:
             continue
         limit = joint.find("limit")
         if limit is None or limit.get("lower") is None or limit.get("upper") is None:
-            raise ValueError(f"SG2 URDF has no position limits for {name}")
+            raise ValueError(f"Selected robot URDF has no position limits for {name}")
         lower, upper = float(limit.get("lower")), float(limit.get("upper"))
         if not math.isfinite(lower) or not math.isfinite(upper) or lower >= upper:
-            raise ValueError(f"SG2 URDF has invalid position limits for {name}")
+            raise ValueError(f"Selected robot URDF has invalid position limits for {name}")
         urdf_limits[name] = (lower, upper)
     if set(urdf_limits) != set(names):
-        raise ValueError(f"SG2 URDF is missing 19D joints: {sorted(set(names) - set(urdf_limits))}")
-    if urdf_limits != contract_limits:
+        raise ValueError(f"Selected robot URDF is missing 19D joints: {sorted(set(names) - set(urdf_limits))}")
+    if not local_spec and urdf_limits != contract_limits:
         raise ValueError("SG2 URDF joint limits differ from Cyclo Lab's 19D action contract")
     return names, urdf_limits
 
 
 def discover_environments() -> list[str]:
-    """List literal SG2 Gym IDs declared in the existing source and local plugins."""
+    """List SG2 environments and task-local BG2 environments with a robot contract."""
     names: set[str] = set()
     for root in REGISTRATION_ROOTS:
         if not root.is_dir():
@@ -79,9 +119,34 @@ def discover_environments() -> list[str]:
                     if keyword.arg != "id" or not isinstance(keyword.value, ast.Constant):
                         continue
                     name = keyword.value.value
-                    if isinstance(name, str) and name.startswith("Cyclo-") and "FFW-SG2" in name:
-                        names.add(name)
+                    if isinstance(name, str) and name.startswith("Cyclo-"):
+                        if "FFW-SG2" in name or ("FFW-BG2" in name and "-Task" in name and local_robot_spec(name)):
+                            names.add(name)
     return sorted(names)
+
+
+def validate_object_poses(raw: object) -> dict:
+    """Validate explicit world-frame spawn poses (XYZ metres, fixed XYZ Euler degrees)."""
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict) or len(raw) > 64:
+        raise ValueError("Object poses must map at most 64 object names to poses.")
+    result = {}
+    for name, pose in raw.items():
+        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,99}", name) or name == "robot":
+            raise ValueError("Select a scene object, not the robot.")
+        if not isinstance(pose, dict):
+            raise ValueError(f"{name}: object pose must contain xyz_m and rpy_deg.")
+        result[name] = {}
+        for key, bound in (("xyz_m", 10.0), ("rpy_deg", 360.0)):
+            values = pose.get(key)
+            if not isinstance(values, list) or len(values) != 3 or any(
+                isinstance(v, bool) or not isinstance(v, (int, float))
+                or not math.isfinite(v) or abs(v) > bound for v in values
+            ):
+                raise ValueError(f"{name}: {key} requires three finite values within +/-{bound:g}.")
+            result[name][key] = [float(v) for v in values]
+    return result
 
 
 def validate_plan(raw: object, environments: list[str] | None = None) -> dict:
@@ -100,7 +165,7 @@ def validate_plan(raw: object, environments: list[str] | None = None) -> dict:
         raise ValueError("Control rate must be a positive number.")
     if rate > 240:
         raise ValueError("Control rate must be at most 240 Hz.")
-    joint_names, limits = joint_contract()
+    joint_names, limits = joint_contract(environment)
 
     object_position = raw.get("object_position_xyz_m")
     if object_position is not None:
@@ -166,12 +231,44 @@ def validate_plan(raw: object, environments: list[str] | None = None) -> dict:
     if not any(waypoint["enabled"] for waypoint in normalized):
         raise ValueError("Select at least one point for Preview Motion or Seed Export.")
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "environment": environment,
         "control_hz": float(rate),
         "initial_pose_hold_s": INITIAL_POSE_HOLD_S,
         "object_position_xyz_m": object_position,
+        "object_poses": validate_object_poses(raw.get("object_poses")),
         "preview": raw.get("preview", "head") if raw.get("preview") in ("head", "video") else "head",
         "joint_order": list(joint_names),
         "waypoints": normalized,
     }
+
+
+def materialize_plan_targets(plan: dict, initial_joint_pos: dict | None = None) -> dict:
+    """Write every target explicitly, carrying forward only enabled points.
+
+    The initial values are the selected environment's measured reset pose,
+    never its current/final pose. Fully specified plans also work offline.
+    """
+    names = plan["joint_order"]
+    previous = dict(initial_joint_pos or {})
+    # Simulator feedback can sit a few microradians beyond a hard stop.
+    # Clamp only inherited measured Hold values; authored commands remain strict.
+    _, limits = joint_contract(plan["environment"])
+    for name, value in previous.items():
+        lower, upper = limits[name]
+        if lower - 1.0e-5 <= value <= upper + 1.0e-5:
+            previous[name] = min(upper, max(lower, value))
+    waypoints = []
+    for index, waypoint in enumerate(plan["waypoints"], start=1):
+        target = {**previous, **waypoint["q_des"]}
+        missing = [name for name in names if name not in target]
+        if missing:
+            raise ValueError(
+                "Connect the selected environment once to resolve Hold values "
+                f"from its initial pose (Point {index}: {', '.join(missing)})."
+            )
+        target = {name: target[name] for name in names}
+        waypoints.append({**waypoint, "q_des": target})
+        if waypoint["enabled"]:
+            previous = target
+    return validate_plan({**plan, "waypoints": waypoints})

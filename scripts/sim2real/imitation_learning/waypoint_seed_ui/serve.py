@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -10,11 +11,16 @@ import math
 import os
 from pathlib import Path
 import re
+import socket
+import sys
 import subprocess
 import threading
 import time
 from urllib.parse import parse_qs, quote, unquote, urlsplit
 from uuid import uuid4
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from preview_video import is_complete_mp4
 
 from seed_plan import (
     IK_SOLVER_LABELS,
@@ -22,12 +28,17 @@ from seed_plan import (
     SG2_URDF_FILE,
     discover_environments,
     joint_contract,
+    local_robot_spec,
+    materialize_plan_targets,
     validate_plan,
+    validate_object_poses,
 )
+from teleop_trajectory import validate_trajectory
 
 
 HERE = Path(__file__).resolve().parent
 PLANS = LAB_ROOT / ".runtime/joint_waypoint_seed_ui/plans"
+TELEOP_PLANS = PLANS / "teleop"
 STATE_FILE = LAB_ROOT / ".runtime/joint_waypoint_seed_ui/live_state.json"
 CAMERA_DIR = STATE_FILE.parent / "cameras"
 DATASET_ROOT = LAB_ROOT / "datasets/waypoint_seed"
@@ -49,10 +60,9 @@ OBJECT_REQUEST_FILE = CONTROL_DIR / "object_request.json"
 OBJECT_RESULT_FILE = CONTROL_DIR / "object_result.json"
 STOP_REQUEST_FILE = CONTROL_DIR / "stop_request.json"
 STOP_RESULT_FILE = CONTROL_DIR / "stop_result.json"
-CONNECT_PLAN_FILE = CONTROL_DIR / "connect_plan.json"
-STAGED_SG2_URDF_FILE = CONTROL_DIR / "ffw_sg2_follower.urdf"
 ACCEPT_REQUEST_FILE = CONTROL_DIR / "accept_request.json"
-EXPORT_STATUS_FILE = CONTROL_DIR / "export_status.json"
+RUNNER_SG2_URDF = "/tmp/waypoint_seed_sg2.urdf"
+RUNNER_BG2_URDF = "/tmp/waypoint_seed_bg2.urdf"
 RUNNER_CONTAINER = os.environ.get("SEED_RUNNER_CONTAINER", "cyclo_lab")
 RUNNER_LAB_ROOT = os.environ.get("SEED_RUNNER_LAB_ROOT", "/workspace/cyclo_lab")
 RUNNER_DIR = os.environ.get(
@@ -63,9 +73,96 @@ RUNNER_PYTHON = os.environ.get(
 )
 CONNECT_LOCK = threading.RLock()
 EXPORT_LOCK = threading.Lock()
+EXPORT_STATUS: dict = {}
 RENDER_LOCK = threading.Lock()
 LAUNCH_STATE = {"environment": None, "started_at_ms": 0}
 RENDER_JOBS: dict[str, dict] = {}
+LEADER_LOCK = threading.RLock()
+LEADER_READERS = {
+    profile: {"process": None, "values": {}, "error": "", "last_start": 0.0, "token": ""}
+    for profile in ("a3", "mini")
+}
+LEADER_LIVE_FILE = CONTROL_DIR / "leader_live_mini.json"
+LEADER_TELEOP_FILE = CONTROL_DIR / "leader_teleop.json"
+TELEOP_CAPTURE_REQUEST_FILE = CONTROL_DIR / "teleop_capture_request.json"
+TELEOP_CAPTURE_RESULT_FILE = CONTROL_DIR / "teleop_capture_result.json"
+TELEOP_CAPTURE_LOCK = threading.Lock()
+LEADER_ACTIVE_ARMS: set[str] = set()
+
+
+def stop_leader_reader(profile: str | None = None) -> None:
+    for selected in ((profile,) if profile else LEADER_READERS):
+        with LEADER_LOCK:
+            reader = LEADER_READERS[selected]
+            process, token = reader["process"], reader["token"]
+            reader.update(process=None, token="", values={}, error="")
+        if token:
+            (CONTROL_DIR / f"leader_stop_{selected}.txt").write_text(token, encoding="utf-8")
+        if selected == "mini" and token:
+            LEADER_LIVE_FILE.unlink(missing_ok=True)
+            write_json_atomic(LEADER_TELEOP_FILE, {"enabled": False})
+            LEADER_ACTIVE_ARMS.clear()
+        if process is not None and process.poll() is None:
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.terminate()
+
+
+def _read_leader_lines(profile: str, process) -> None:
+    for line in process.stdout:
+        try:
+            if line.startswith("LEADER_STATE="):
+                value = json.loads(line.removeprefix("LEADER_STATE="))
+                with LEADER_LOCK:
+                    reader = LEADER_READERS[profile]
+                    if reader["process"] is process:
+                        reader["values"][value["side"]] = value
+                        reader["error"] = ""
+                        if profile == "mini":
+                            write_json_atomic(LEADER_LIVE_FILE, {"run_id": reader["token"], "values": reader["values"]})
+            elif line.startswith("LEADER_ERROR="):
+                with LEADER_LOCK:
+                    reader = LEADER_READERS[profile]
+                    if reader["process"] is process:
+                        reader["error"] = json.loads(line.removeprefix("LEADER_ERROR=")).get("error", "Leader reader failed.")
+            elif profile == "mini" and line.startswith("LEADER_COMMAND="):
+                command = json.loads(line.removeprefix("LEADER_COMMAND="))
+                with LEADER_LOCK:
+                    current_reader = LEADER_READERS[profile]["process"] is process
+                if current_reader:
+                    handle_leader_command(command)
+        except (ValueError, KeyError, TypeError):
+            continue
+    process.wait()
+    with LEADER_LOCK:
+        reader = LEADER_READERS[profile]
+        if reader["process"] is process:
+            reader["error"] = reader["error"] or "Leader reader stopped. Click Read Leader to reconnect."
+
+
+def ensure_leader_reader(profile: str) -> None:
+    with LEADER_LOCK:
+        reader = LEADER_READERS[profile]
+        if reader["process"] is not None and reader["process"].poll() is None:
+            return
+        if time.monotonic() - reader["last_start"] < 3:
+            return
+        reader["last_start"] = time.monotonic()
+        reader["values"].clear()
+        reader["error"] = ""
+        reader["token"] = uuid4().hex
+        domain, port = ("30", "7447") if profile == "a3" else ("31", "7448")
+        reader["process"] = subprocess.Popen([
+            "docker", "exec", "-e", f"ROS_DOMAIN_ID={domain}",
+            "-e", "ZENOH_ROUTER_IP=127.0.0.1", "-e", f"ZENOH_ROUTER_PORT={port}",
+            "-w", RUNNER_DIR, RUNNER_CONTAINER,
+            RUNNER_PYTHON, "leader_snapshot.py", "--watch",
+            "--stop-file", f"{RUNNER_LAB_ROOT}/.runtime/joint_waypoint_seed_ui/leader_stop_{profile}.txt",
+            "--token", reader["token"],
+        ], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, bufsize=1)
+        threading.Thread(target=_read_leader_lines, args=(profile, reader["process"]), daemon=True).start()
 
 
 def live_state() -> dict:
@@ -83,6 +180,12 @@ def live_state() -> dict:
         launched_env = LAUNCH_STATE["environment"]
         if state.get("status") in ("running", "awaiting_acceptance") and state.get("environment") == launched_env:
             LAUNCH_STATE.update(environment=None, started_at_ms=0)
+        elif (
+            state.get("status") in ("failed", "saved", "disconnected")
+            and state.get("environment") == launched_env
+            and state.get("updated_at_ms", 0) >= launched_at
+        ):
+            LAUNCH_STATE.update(environment=None, started_at_ms=0)
         elif launched_env and now_ms - launched_at < 180_000:
             return {
                 "status": "starting", "environment": launched_env,
@@ -93,6 +196,49 @@ def live_state() -> dict:
     return state
 
 
+def handle_leader_command(command: dict) -> None:
+    """Follow Mini Leader joystick toggles only in the connected BG2 preview."""
+    side, data = command.get("side"), command.get("data")
+    if side not in ("left", "right") or not isinstance(data, int):
+        return
+    if round(time.time() * 1000) - command.get("captured_at_ms", 0) > 1000:
+        return
+    state = live_state()
+    if (
+        state.get("status") != "running" or state.get("recording_mode")
+        or state.get("phase") not in ("final_hold", "leader_teleop", "leader_waiting")
+        or "FFW-BG2" not in state.get("environment", "")
+    ):
+        return
+    with LEADER_LOCK:
+        if data == 2:
+            if side in LEADER_ACTIVE_ARMS:
+                LEADER_ACTIVE_ARMS.remove(side)
+            else:
+                LEADER_ACTIVE_ARMS.add(side)
+        elif data == 1:
+            LEADER_ACTIVE_ARMS.add(side)
+        else:
+            LEADER_ACTIVE_ARMS.discard(side)
+        arms = tuple(sorted(LEADER_ACTIVE_ARMS))
+    request = {
+        "id": uuid4().hex, "enabled": bool(arms),
+        "side": "both" if len(arms) == 2 else (arms[0] if arms else None),
+        "run_id": state["run_id"], "environment": state["environment"],
+        "control_hz": 60.0, "source": "mini_joystick",
+    }
+    write_json_atomic(LEADER_TELEOP_FILE, request)
+
+
+
+def explicit_waypoint_plan(raw: object, state: dict | None = None) -> dict:
+    """Normalize browser plans before writing saved, preview or export JSON."""
+    plan = validate_plan(raw, discover_environments())
+    state = live_state() if state is None else state
+    initial = state.get("initial_joint_pos") if state.get("environment") == plan["environment"] else None
+    return materialize_plan_targets(plan, initial)
+
+
 def write_json_atomic(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -100,21 +246,48 @@ def write_json_atomic(path: Path, payload: object) -> None:
     os.replace(temporary, path)
 
 
-def stage_sg2_urdf() -> None:
-    """Expose the validated host URDF inside the already-mounted Cyclo Lab tree."""
-    joint_contract()
-    if not SG2_URDF_FILE.is_file():
-        raise ValueError(
-            "The advanced TCP IK solvers need the SG2 URDF on the host. "
-            "Set SG2_URDF_PATH before starting the UI server."
-        )
-    payload = SG2_URDF_FILE.read_bytes()
-    if STAGED_SG2_URDF_FILE.is_file() and STAGED_SG2_URDF_FILE.read_bytes() == payload:
-        return
-    STAGED_SG2_URDF_FILE.parent.mkdir(parents=True, exist_ok=True)
-    temporary = STAGED_SG2_URDF_FILE.with_suffix(".urdf.tmp")
-    temporary.write_bytes(payload)
-    os.replace(temporary, STAGED_SG2_URDF_FILE)
+def request_teleop_capture(action: str) -> dict:
+    state = live_state()
+    if (state.get("status") != "running" or state.get("recording_mode")
+            or "FFW-BG2" not in state.get("environment", "")
+            or state.get("phase") not in ("final_hold", "leader_teleop", "leader_waiting")):
+        raise ValueError("Connect a BG2 teleop preview before recording.")
+    if not TELEOP_CAPTURE_LOCK.acquire(blocking=False):
+        raise ValueError("Another teleop recording action is in progress.")
+    try:
+        request = {"id": uuid4().hex, "action": action, "run_id": state["run_id"],
+                   "environment": state["environment"]}
+        write_json_atomic(TELEOP_CAPTURE_REQUEST_FILE, request)
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline:
+            try:
+                result = json.loads(TELEOP_CAPTURE_RESULT_FILE.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                result = {}
+            if result.get("id") == request["id"]:
+                if result.get("status") != "ok":
+                    raise ValueError(result.get("error", "Teleop recording failed."))
+                return result
+            time.sleep(0.05)
+        raise ValueError("Teleop runner did not acknowledge the recording action.")
+    finally:
+        TELEOP_CAPTURE_LOCK.release()
+
+
+def runner_urdf_env(environment: str) -> list[str]:
+    """Read the selected robot URDF and pass it to the Isaac container."""
+    joint_contract(environment)
+    spec = local_robot_spec(environment)
+    source = Path(spec["urdf_path"]) if spec else SG2_URDF_FILE
+    target = RUNNER_BG2_URDF if spec else RUNNER_SG2_URDF
+    variable = "BG2_URDF_PATH" if spec else "SG2_URDF_PATH"
+    if not source.is_file():
+        raise ValueError(f"Robot URDF is missing: {source}")
+    subprocess.run(
+        ["docker", "cp", str(source), f"{RUNNER_CONTAINER}:{target}"],
+        check=True, capture_output=True, text=True, timeout=30,
+    )
+    return ["-e", f"{variable}={target}"]
 
 
 def validate_control_rate(control_hz: float, physics_hz: float = 120.0) -> tuple[float, int]:
@@ -160,15 +333,18 @@ def seed_path(relative: str, *, suffix: str | None = None) -> Path:
 
 
 def export_status(payload: dict) -> None:
-    payload = {**payload, "updated_at_ms": round(time.time() * 1000)}
-    write_json_atomic(EXPORT_STATUS_FILE, payload)
+    global EXPORT_STATUS
+    EXPORT_STATUS = {**payload, "updated_at_ms": round(time.time() * 1000)}
 
 
-def start_export_job(job_id: str, plan: dict, folder: str) -> None:
+def start_export_job(job_id: str, plan: dict, folder: str, trajectory: dict | None = None) -> None:
     try:
         export_status({"id": job_id, "status": "stopping_preview", "folder": folder})
         state = live_state()
-        if state.get("status") == "awaiting_acceptance" or state.get("recording_mode"):
+        if state.get("status") == "awaiting_acceptance" or (
+            state.get("recording_mode")
+            and state.get("status") in ("running", "starting", "finalizing", "stale")
+        ):
             raise ValueError("A Seed Export is already recording.")
         if state.get("status") in ("running", "starting"):
             if state.get("environment") != plan["environment"]:
@@ -191,8 +367,6 @@ def start_export_job(job_id: str, plan: dict, folder: str) -> None:
         STOP_REQUEST_FILE.unlink(missing_ok=True)
         STOP_RESULT_FILE.unlink(missing_ok=True)
         ACCEPT_REQUEST_FILE.unlink(missing_ok=True)
-        plan_file = CONTROL_DIR / f"export_plan_{job_id}.json"
-        write_json_atomic(plan_file, plan)
         # A folder is a seed collection. Always add a uniquely named HDF5 so
         # the same Seed Export folder can be reused without overwriting files.
         stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S_%f")
@@ -200,31 +374,23 @@ def start_export_job(job_id: str, plan: dict, folder: str) -> None:
         dataset_stem = Path(dataset_name).stem
         container_folder = f"{RUNNER_LAB_ROOT}/datasets/waypoint_seed/{folder}"
         container_dataset = f"{container_folder}/{dataset_name}"
-        container_plan = f"{RUNNER_LAB_ROOT}/.runtime/joint_waypoint_seed_ui/{plan_file.name}"
-        manifest_file = CONTROL_DIR / f"export_manifest_{job_id}.json"
-        write_json_atomic(manifest_file, {
-            "folder": folder, "dataset_file": dataset_name,
-            "environment": plan["environment"], "control_hz": plan["control_hz"],
-            "initial_pose_hold_s": plan["initial_pose_hold_s"],
-            "object_position_xyz_m": plan.get("object_position_xyz_m"),
-        })
-        container_manifest = f"{RUNNER_LAB_ROOT}/.runtime/joint_waypoint_seed_ui/{manifest_file.name}"
+        container_plan = f"{container_folder}/{dataset_stem}_plan.json"
         subprocess.run(
             ["docker", "exec", RUNNER_CONTAINER, "mkdir", "-p", container_folder],
             check=True, capture_output=True, text=True, timeout=30,
         )
         subprocess.run(
-            ["docker", "exec", RUNNER_CONTAINER, "cp", container_plan, f"{container_folder}/{dataset_stem}_plan.json"],
+            ["docker", "exec", "-i", RUNNER_CONTAINER, "python3", "-c",
+             "from pathlib import Path; import sys; Path(sys.argv[1]).write_text(sys.stdin.read(), encoding='utf-8')",
+             container_plan],
+            input=json.dumps(trajectory if trajectory else plan, ensure_ascii=False) + "\n",
             check=True, capture_output=True, text=True, timeout=30,
         )
-        subprocess.run(
-            ["docker", "exec", RUNNER_CONTAINER, "cp", container_manifest, f"{container_folder}/{dataset_stem}.json"],
-            check=True, capture_output=True, text=True, timeout=30,
-        )
+        urdf_env = runner_urdf_env(plan["environment"])
         subprocess.run([
-            "docker", "exec", "-d", "-e", f"CYCLO_LAB_ROOT={RUNNER_LAB_ROOT}",
+            "docker", "exec", "-d", "-e", f"CYCLO_LAB_ROOT={RUNNER_LAB_ROOT}", *urdf_env,
             "-w", RUNNER_DIR, RUNNER_CONTAINER, RUNNER_PYTHON, "run_seed.py",
-            "--plan", container_plan, "--execute", "--headless", "--record-hdf5", "--auto-accept",
+            "--trajectory" if trajectory else "--plan", container_plan, "--execute", "--headless", "--record-hdf5", "--auto-accept",
             "--dataset-file", container_dataset,
         ], check=True, capture_output=True, text=True, timeout=30)
         launched_at_ms = round(time.time() * 1000)
@@ -277,7 +443,7 @@ def start_export_job(job_id: str, plan: dict, folder: str) -> None:
 def render_seed_job(job_id: str, dataset: Path, relative: str, fps: float) -> None:
     try:
         with RENDER_LOCK:
-            RENDER_JOBS[job_id] = {"status": "rendering", "dataset": relative}
+            RENDER_JOBS[job_id] = {"id": job_id, "status": "rendering", "dataset": relative}
         relative_container = dataset.relative_to(DATASET_ROOT).as_posix()
         container_dataset = f"{RUNNER_LAB_ROOT}/datasets/waypoint_seed/{relative_container}"
         renderer = f"{RUNNER_LAB_ROOT}/scripts/sim2real/imitation_learning/render_hdf5_cameras.py"
@@ -286,17 +452,65 @@ def render_seed_job(job_id: str, dataset: Path, relative: str, fps: float) -> No
             "--input-file", container_dataset, "--fps", f"{fps:g}", "--overwrite",
         ], check=True, capture_output=True, text=True, timeout=600)
         video = dataset.with_name(f"{dataset.stem}_camera_previews") / "demo_0_three_cameras.mp4"
-        if not video.is_file():
-            raise FileNotFoundError(f"Rendered video not found: {video}")
+        if not is_complete_mp4(video):
+            raise RuntimeError(f"Rendered video is missing or incomplete: {video}")
         url = f"/api/seed-video?path={quote(video.relative_to(DATASET_ROOT).as_posix())}"
         with RENDER_LOCK:
-            RENDER_JOBS[job_id] = {"status": "ready", "dataset": relative, "video_url": url}
+            RENDER_JOBS[job_id] = {"id": job_id, "status": "ready", "dataset": relative, "video_url": url}
     except Exception as exc:
         with RENDER_LOCK:
-            RENDER_JOBS[job_id] = {"status": "error", "dataset": relative, "error": str(exc)}
+            RENDER_JOBS[job_id] = {"id": job_id, "status": "error", "dataset": relative, "error": str(exc)}
 
 
 class Handler(BaseHTTPRequestHandler):
+    def _camera_stream(self, run_id: str) -> None:
+        state = live_state()
+        if state.get("run_id") != run_id or state.get("status") not in ("running", "awaiting_acceptance"):
+            self._json(404, {"error": "Live camera stream unavailable"})
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=camera-frame")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.connection.settimeout(2.0)
+        self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
+        previous = {}
+        deadline = time.monotonic()
+        try:
+            while True:
+                state = live_state()
+                if state.get("run_id") != run_id or state.get("status") not in ("running", "awaiting_acceptance"):
+                    return
+                for label in CAMERA_LABELS:
+                    if label not in state.get("cameras", []):
+                        continue
+                    try:
+                        # The writer atomically replaces files; stat and read
+                        # the same open file so metadata matches these bytes.
+                        with (CAMERA_DIR / f"{label}.jpg").open("rb") as frame:
+                            stamp = os.fstat(frame.fileno()).st_mtime_ns
+                            if previous.get(label) == stamp:
+                                continue
+                            payload = frame.read()
+                    except OSError:
+                        continue
+                    header = (f"--camera-frame\r\nContent-Type: image/jpeg\r\n"
+                              f"Content-Length: {len(payload)}\r\nX-Camera: {label}\r\n"
+                              f"X-Published-Ms: {stamp / 1_000_000:.3f}\r\n\r\n").encode("ascii")
+                    self.wfile.write(header + payload + b"\r\n")
+                    previous[label] = stamp
+                self.wfile.flush()
+                deadline += 1.0 / 15.0
+                now = time.monotonic()
+                if deadline < now:
+                    deadline += (math.floor((now - deadline) * 15.0) + 1) / 15.0
+                time.sleep(max(0.0, deadline - time.monotonic()))
+        except (OSError, TimeoutError):
+            pass
+        finally:
+            self.close_connection = True
+
     def _reply(self, status: int, body: bytes, content_type: str) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
@@ -354,9 +568,15 @@ class Handler(BaseHTTPRequestHandler):
                 "environments": discover_environments(), "joints": joints, "limits": limits,
                 "limits_source": str(SG2_URDF_FILE) if SG2_URDF_FILE.is_file() else "Cyclo Lab URDF-derived 19D limits",
                 "ik_solvers": IK_SOLVER_LABELS,
+                "environment_limits": {
+                    name: joint_contract(name)[1] for name in discover_environments()
+                    if "FFW-BG2" in name
+                },
             })
         elif request.path == "/api/plans":
-            self._json(200, {"plans": sorted((path.name for path in PLANS.glob("*.json") if path.is_file()), reverse=True)})
+            mode = parse_qs(request.query).get("mode", ["waypoint"])[0]
+            directory = TELEOP_PLANS if mode == "teleop" else PLANS
+            self._json(200, {"plans": sorted((path.name for path in directory.glob("*.json") if path.is_file()), reverse=True)})
         elif request.path.startswith("/api/plans/"):
             name = unquote(request.path.removeprefix("/api/plans/"))
             try:
@@ -368,13 +588,56 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(404, {"error": "Plan not found"})
                 return
             try:
+                mode = parse_qs(request.query).get("mode", ["waypoint"])[0]
+                if mode == "teleop":
+                    trajectory = json.loads((TELEOP_PLANS / name).read_text(encoding="utf-8"))
+                    joint_names, _ = joint_contract(trajectory["environment"])
+                    validate_trajectory(trajectory, joint_names)
+                    self._json(200, {"trajectory": trajectory})
+                    return
                 plan = validate_plan(json.loads((PLANS / name).read_text(encoding="utf-8")), discover_environments())
             except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
                 self._json(400, {"error": str(exc)})
                 return
             self._json(200, {"name": name, "plan": plan})
         elif request.path == "/api/state":
-            self._json(200, live_state())
+            state = live_state()
+            if state.get("status") == "running" and "FFW-BG2" in state.get("environment", ""):
+                ensure_leader_reader("mini")
+            self._json(200, state)
+        elif request.path == "/api/leader/snapshot":
+            side = parse_qs(request.query).get("side", [""])[0]
+            environment = parse_qs(request.query).get("environment", [""])[0]
+            profile = parse_qs(request.query).get("profile", ["a3"])[0]
+            if profile not in ("a3", "mini") or side not in ("left", "right") or environment not in discover_environments() or not any(
+                robot in environment for robot in ("FFW-SG2", "FFW-BG2")
+            ):
+                self._json(400, {"error": "Select an SG2 or BG2 environment and a left or right arm."})
+                return
+            try:
+                ensure_leader_reader(profile)
+                with LEADER_LOCK:
+                    result = dict(LEADER_READERS[profile]["values"].get(side, {}))
+                    error = LEADER_READERS[profile]["error"]
+                age_ms = round(time.time() * 1000) - result.get("captured_at_ms", 0)
+                if age_ms > 1000:
+                    self._json(200, {"status": "waiting", "side": side, "profile": profile, "error": error or "Waiting for live leader joint states."})
+                    return
+                _, limits = joint_contract(environment)
+                result["outside_limits"] = [
+                    name for name, value in result["q_des"].items()
+                    if name not in limits or not limits[name][0] <= value <= limits[name][1]
+                ]
+                result["status"] = "live"
+                result["profile"] = profile
+                self._json(200, result)
+            except (OSError, ValueError) as exc:
+                self._json(503, {"error": str(exc)})
+        elif request.path == "/api/leader/teleop":
+            try:
+                self._json(200, json.loads(LEADER_TELEOP_FILE.read_text(encoding="utf-8")))
+            except (OSError, ValueError):
+                self._json(200, {"enabled": False})
         elif request.path == "/api/ik-result":
             request_id = parse_qs(request.query).get("id", [""])[0]
             try:
@@ -417,10 +680,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, result)
         elif request.path == "/api/export-status":
             request_id = parse_qs(request.query).get("id", [""])[0]
-            try:
-                result = json.loads(EXPORT_STATUS_FILE.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                result = None
+            result = EXPORT_STATUS
             if result is None or result.get("id") != request_id or not request_id:
                 self._json(202, {"status": "pending"})
             else:
@@ -436,6 +696,8 @@ class Handler(BaseHTTPRequestHandler):
                     try:
                         metadata_path = path.with_suffix(".json")
                         if not metadata_path.is_file():
+                            metadata_path = path.with_name(f"{path.stem}_plan.json")
+                        if not metadata_path.is_file():
                             metadata_path = path.parent / "export.json"
                         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
                     except (OSError, ValueError, TypeError):
@@ -450,7 +712,7 @@ class Handler(BaseHTTPRequestHandler):
                         "environment": metadata.get("environment"),
                         "video_url": (
                             f"/api/seed-video?path={quote(video.relative_to(DATASET_ROOT).as_posix())}"
-                            if video.is_file() else None
+                            if is_complete_mp4(video) else None
                         ),
                     })
             self._json(200, {"seeds": seeds})
@@ -474,6 +736,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(404, {"error": "Seed video not found"})
                 return
             self._video(path)
+        elif request.path == "/api/camera-stream":
+            self._camera_stream(parse_qs(request.query).get("run", [""])[0])
         elif request.path.startswith("/api/camera/"):
             label = request.path.removeprefix("/api/camera/").removesuffix(".jpg")
             state = live_state()
@@ -502,6 +766,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/plans", "/api/ik-requests", "/api/preview-requests", "/api/reset-requests", "/api/object-requests",
             "/api/runner/connect", "/api/runner/disconnect", "/api/recording/accept",
             "/api/recording/start", "/api/seeds/render",
+            "/api/leader/stop", "/api/teleop/recording",
         ):
             self._json(404, {"error": "Not found"})
             return
@@ -510,6 +775,19 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < size <= (128_000 if self.path in ("/api/plans", "/api/preview-requests", "/api/recording/start") else 2_000):
                 raise ValueError("Request size is invalid.")
             raw = json.loads(self.rfile.read(size))
+            if self.path == "/api/teleop/recording":
+                action = raw.get("action") if isinstance(raw, dict) else None
+                if action not in ("record", "discard"):
+                    raise ValueError("Choose Record or Discard.")
+                self._json(200, request_teleop_capture(action))
+                return
+            if self.path == "/api/leader/stop":
+                profile = raw.get("profile")
+                if profile not in LEADER_READERS:
+                    raise ValueError("Select an A3 or Mini leader.")
+                stop_leader_reader(profile)
+                self._json(200, {"status": "stopped"})
+                return
             if self.path == "/api/runner/connect":
                 self._post_runner_connect(raw)
                 return
@@ -540,19 +818,44 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(raw, dict):
                 raise ValueError("Save Waypoints request must be an object.")
             name = validate_plan_filename(raw.get("filename"))
-            plan = validate_plan(raw.get("plan"), discover_environments())
-            PLANS.mkdir(exist_ok=True)
-            path = PLANS / name
+            mode = raw.get("mode", "waypoint")
+            if mode == "teleop":
+                path = TELEOP_PLANS / name
+                if path.exists():
+                    self._json(409, {"error": f"A saved teleop waypoint named {name} already exists."})
+                    return
+                result = request_teleop_capture("save")
+                draft = CONTROL_DIR / result["draft"]
+                with draft.open(encoding="utf-8") as stream:
+                    header = json.loads(stream.readline())
+                    samples = [json.loads(line) for line in stream if line.strip()]
+                trajectory = {**header, "samples": samples}
+                joint_names, _ = joint_contract(trajectory["environment"])
+                validate_trajectory(trajectory, joint_names)
+                plan = trajectory
+                directory = TELEOP_PLANS
+            elif mode == "waypoint":
+                plan = explicit_waypoint_plan(raw.get("plan"))
+                directory = PLANS
+            else:
+                raise ValueError("Unknown save mode.")
+            directory.mkdir(parents=True, exist_ok=True)
+            path = directory / name
             if path.exists():
                 self._json(409, {"error": f"A saved waypoint file named {name} already exists. Choose another filename."})
                 return
             with path.open("x", encoding="utf-8") as stream:
                 json.dump(plan, stream, ensure_ascii=False, indent=2)
                 stream.write("\n")
+            if mode == "teleop":
+                try:
+                    draft.unlink(missing_ok=True)
+                except OSError:
+                    pass
             self._json(201, {
                 "saved_path": str(path),
-                "steps": sum(w["steps"] for w in plan["waypoints"]),
-                "duration_s": sum(w["actual_duration_s"] for w in plan["waypoints"]),
+                "steps": len(plan["samples"]) if mode == "teleop" else sum(w["steps"] for w in plan["waypoints"]),
+                "duration_s": plan["samples"][-1]["time_s"] if mode == "teleop" else sum(w["actual_duration_s"] for w in plan["waypoints"]),
             })
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
             self._json(400, {"error": str(exc)})
@@ -563,14 +866,22 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(raw, dict):
             raise ValueError("Seed Export request must be an object.")
         folder = validate_folder_name(raw.get("folder_name"))
-        plan = validate_plan(raw.get("plan"), discover_environments())
+        trajectory = None
+        if raw.get("mode") == "teleop":
+            name = validate_plan_filename(raw.get("trajectory_name"))
+            trajectory = json.loads((TELEOP_PLANS / name).read_text(encoding="utf-8"))
+            plan = validate_plan(trajectory["source_plan"], discover_environments())
+            validate_trajectory(trajectory, plan["joint_order"])
+            plan = {**plan, "control_hz": 15.0}
+        else:
+            plan = explicit_waypoint_plan(raw.get("plan"))
         physics_hz, decimation = validate_control_rate(plan["control_hz"])
         if not EXPORT_LOCK.acquire(blocking=False):
             raise ValueError("Another Seed Export is starting.")
         job_id = uuid4().hex
         try:
             thread = threading.Thread(
-                target=start_export_job, args=(job_id, plan, folder),
+                target=start_export_job, args=(job_id, plan, folder, trajectory),
                 name=f"seed-export-{job_id[:8]}", daemon=True,
             )
             thread.start()
@@ -590,7 +901,7 @@ class Handler(BaseHTTPRequestHandler):
         if not dataset.is_file() or dataset.name.endswith(".pending.hdf5"):
             raise ValueError("Select a completed HDF5 seed.")
         video = dataset.with_name(f"{dataset.stem}_camera_previews") / "demo_0_three_cameras.mp4"
-        if video.is_file():
+        if is_complete_mp4(video):
             self._json(200, {
                 "status": "ready", "dataset": relative,
                 "video_url": f"/api/seed-video?path={quote(video.relative_to(DATASET_ROOT).as_posix())}",
@@ -599,6 +910,8 @@ class Handler(BaseHTTPRequestHandler):
         fps = 15.0
         try:
             metadata_path = dataset.with_suffix(".json")
+            if not metadata_path.is_file():
+                metadata_path = dataset.with_name(f"{dataset.stem}_plan.json")
             if not metadata_path.is_file():
                 metadata_path = dataset.parent / "export.json"
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
@@ -609,7 +922,11 @@ class Handler(BaseHTTPRequestHandler):
             fps = 15.0
         job_id = uuid4().hex
         with RENDER_LOCK:
-            RENDER_JOBS[job_id] = {"status": "queued", "dataset": relative}
+            for active_id, job in RENDER_JOBS.items():
+                if job.get("dataset") == relative and job.get("status") in ("queued", "rendering"):
+                    self._json(202, {**job, "id": active_id})
+                    return
+            RENDER_JOBS[job_id] = {"id": job_id, "status": "queued", "dataset": relative}
         threading.Thread(
             target=render_seed_job, args=(job_id, dataset, relative, fps),
             name=f"seed-render-{job_id[:8]}", daemon=True,
@@ -624,6 +941,7 @@ class Handler(BaseHTTPRequestHandler):
             "environment": raw.get("environment"),
             "control_hz": raw.get("control_hz", 15),
             "object_position_xyz_m": raw.get("object_position_xyz_m"),
+            "object_poses": raw.get("object_poses", {}),
             "preview": "head",
             "waypoints": [{"duration_s": 0.1, "memo": "UI connection hold", "q_des": {}}],
         }, environments)
@@ -635,19 +953,21 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(200, {"status": "already_connected", "environment": plan["environment"]})
                     return
                 raise ValueError(f"Disconnect the running environment first: {state.get('environment')}")
-            stage_sg2_urdf()
-            write_json_atomic(CONNECT_PLAN_FILE, plan)
+            urdf_env = runner_urdf_env(plan["environment"])
+            write_json_atomic(LEADER_TELEOP_FILE, {"enabled": False})
+            with LEADER_LOCK:
+                LEADER_ACTIVE_ARMS.clear()
             STOP_REQUEST_FILE.unlink(missing_ok=True)
             STOP_RESULT_FILE.unlink(missing_ok=True)
             try:
-                container_plan = f"{RUNNER_LAB_ROOT}/.runtime/joint_waypoint_seed_ui/{CONNECT_PLAN_FILE.name}"
                 subprocess.run([
                     "docker", "exec", "-d",
-                    "-e", f"CYCLO_LAB_ROOT={RUNNER_LAB_ROOT}",
+                    "-e", f"CYCLO_LAB_ROOT={RUNNER_LAB_ROOT}", *urdf_env,
                     "-w", RUNNER_DIR,
                     RUNNER_CONTAINER,
                     RUNNER_PYTHON, "run_seed.py",
-                    "--plan", container_plan, "--execute", "--headless", "--hold-final",
+                    "--plan-json", json.dumps(plan, ensure_ascii=False),
+                    "--execute", "--headless", "--hold-final",
                 ], check=True, capture_output=True, text=True, timeout=30)
             except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
                 detail = getattr(exc, "stderr", "") or str(exc)
@@ -665,6 +985,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if state.get("environment") != raw["environment"]:
                 raise ValueError(f"The running environment differs from the selection: {state.get('environment')}")
+            write_json_atomic(LEADER_TELEOP_FILE, {"enabled": False})
+            with LEADER_LOCK:
+                LEADER_ACTIVE_ARMS.clear()
             request = {
                 "id": uuid4().hex,
                 "run_id": state.get("run_id"),
@@ -726,6 +1049,9 @@ class Handler(BaseHTTPRequestHandler):
         self._json(202, {"status": "pending", "id": request["id"]})
 
     def _post_preview_request(self, raw: dict) -> None:
+        write_json_atomic(LEADER_TELEOP_FILE, {"enabled": False})
+        with LEADER_LOCK:
+            LEADER_ACTIVE_ARMS.clear()
         state = live_state()
         if (
             state.get("status") != "running"
@@ -733,7 +1059,7 @@ class Handler(BaseHTTPRequestHandler):
             or not state.get("run_id")
         ):
             raise ValueError("The preview runner must be ready while holding its final pose.")
-        plan = validate_plan(raw, discover_environments())
+        plan = explicit_waypoint_plan(raw, state)
         validate_control_rate(plan["control_hz"])
         if plan["environment"] != state.get("environment"):
             raise ValueError("The running environment differs from the UI selection.")
@@ -755,6 +1081,9 @@ class Handler(BaseHTTPRequestHandler):
         })
 
     def _post_reset_request(self, raw: dict) -> None:
+        write_json_atomic(LEADER_TELEOP_FILE, {"enabled": False})
+        with LEADER_LOCK:
+            LEADER_ACTIVE_ARMS.clear()
         state = live_state()
         if (
             not isinstance(raw, dict)
@@ -787,17 +1116,20 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("The environment must be connected and holding its pose.")
         if raw.get("environment") != state.get("environment"):
             raise ValueError("The running environment differs from the UI selection.")
-        xyz = raw.get("xyz_m")
-        if not isinstance(xyz, list) or len(xyz) != 3 or any(
-            isinstance(value, bool) or not isinstance(value, (int, float))
-            or not math.isfinite(value) or abs(value) > 10.0 for value in xyz
-        ):
-            raise ValueError("Object XYZ must contain three finite world-frame values in metres.")
+        object_name = raw.get("object_name") or state.get("object_name")
+        available = state.get("objects", {})
+        if object_name not in available:
+            raise ValueError("Select an available scene object; reconnect to refresh the object list.")
+        pose = validate_object_poses({object_name: {
+            "xyz_m": raw.get("xyz_m"),
+            "rpy_deg": raw.get("rpy_deg", available[object_name]["rpy_deg"]),
+        }})[object_name]
         request = {
             "id": uuid4().hex,
             "run_id": state["run_id"],
             "environment": state["environment"],
-            "xyz_m": [float(value) for value in xyz],
+            "object_name": object_name,
+            **pose,
         }
         write_json_atomic(OBJECT_REQUEST_FILE, request)
         self._json(202, {"status": "pending", "id": request["id"]})
@@ -810,12 +1142,15 @@ def main() -> None:
     args = parser.parse_args()
     CONTROL_DIR.mkdir(parents=True, exist_ok=True)
     server = ThreadingHTTPServer((args.host, args.port), Handler)
+    atexit.register(stop_leader_reader)
     print(f"Open http://{args.host}:{args.port} (Ctrl+C to stop)", flush=True)
     try:
+        ensure_leader_reader("mini")
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
+        stop_leader_reader()
         server.server_close()
 
 
