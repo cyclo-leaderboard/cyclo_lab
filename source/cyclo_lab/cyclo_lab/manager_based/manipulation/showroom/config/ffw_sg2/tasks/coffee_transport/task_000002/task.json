@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "task_id": "000002",
+  "environment": "showroom",
+  "robot": "FFW-SG2",
+  "kind": "task",
+  "default_env_id": "Cyclo-Real-Showroom-Task000002-FFW-SG2-v0",
+  "variants": {
+    "random": "Cyclo-Real-Showroom-Task000002-Random-FFW-SG2-v0",
+    "trajectory": "Cyclo-Real-Showroom-Task000002-Trajectory-Generation-FFW-SG2-v0"
+  }
+}
