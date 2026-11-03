@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "000200",
+  "environment": "white_room",
+  "robot": "FFW-SG2",
+  "kind": "task",
+  "default_env_id": "Cyclo-Real-WhiteRoom-Task000200-FFW-SG2-v0",
+  "variants": {
+    "random": "Cyclo-Real-WhiteRoom-Task000200-Random-FFW-SG2-v0",
+    "mimic_seed_right": "Cyclo-Real-WhiteRoom-Task000200-Right-Mimic-Seed-FFW-SG2-v0",
+    "mimic_generate_right": "Cyclo-Real-WhiteRoom-Task000200-Right-Mimic-Generate-FFW-SG2-v0"
+  }
+}
