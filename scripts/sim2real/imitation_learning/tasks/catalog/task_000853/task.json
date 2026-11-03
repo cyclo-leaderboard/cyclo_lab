@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "task_id": "000853",
+  "environment": "wall_room",
+  "robot": "FFW-BG2",
+  "kind": "task",
+  "default_env_id": "Cyclo-Real-WallRoom-Task000853-FFW-BG2-v0",
+  "variants": {
+    "mimic_seed_left": "Cyclo-Real-WallRoom-Task000853-Left-Mimic-Seed-FFW-BG2-v0",
+    "mimic_generate_left": "Cyclo-Real-WallRoom-Task000853-Left-Mimic-Generate-FFW-BG2-v0",
+    "mimic_seed_right": "Cyclo-Real-WallRoom-Task000853-Right-Mimic-Seed-FFW-BG2-v0",
+    "mimic_generate_right": "Cyclo-Real-WallRoom-Task000853-Right-Mimic-Generate-FFW-BG2-v0"
+  },
+  "base_task": "000400"
+}

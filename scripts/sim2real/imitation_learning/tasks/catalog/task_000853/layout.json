@@ -1,0 +1,18 @@
+{
+  "board_pos_m": [
+    -0.79212,
+    -0.06,
+    0.735
+  ],
+  "board_yaw_rad": 0.0,
+  "cup_pos_m": [
+    -0.6214804403085956,
+    -0.14749949395696194,
+    0.7365
+  ],
+  "table_rear_x_m": -0.85712,
+  "board_rear_offset_m": 0.041,
+  "board_front_offset_m": 0.065,
+  "panel_fold_depth_m": 0.024,
+  "source": "User measured board placement 2026-10-23; board centered on table. Cup retains approximate camera fit from layout_fit.json."
+}

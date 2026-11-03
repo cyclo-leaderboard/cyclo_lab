@@ -1,0 +1,67 @@
+{
+  "id": "bg2_1063_bringup_20261023_camera_aligned_xy",
+  "source": "1063 ai_worker deployed ffw_bringup/config/follower/initial_positions.yaml final steps; live joint feedback verified",
+  "source_sha256": "ab701e1c14624b881724bc2748f80d30eba6bc536b79b51637f89aa8381bb568",
+  "joint_positions": {
+    "arm_l_joint1": 1.0,
+    "arm_l_joint2": 0.0,
+    "arm_l_joint3": 0.0,
+    "arm_l_joint4": -2.2,
+    "arm_l_joint5": 0.0,
+    "arm_l_joint6": 0.0,
+    "arm_l_joint7": 0.0,
+    "gripper_l_joint1": 0.0,
+    "arm_r_joint1": 1.0,
+    "arm_r_joint2": 0.0,
+    "arm_r_joint3": 0.0,
+    "arm_r_joint4": -2.2,
+    "arm_r_joint5": 0.0,
+    "arm_r_joint6": 0.0,
+    "arm_r_joint7": 0.0,
+    "gripper_r_joint1": 0.0,
+    "head_joint1": 0.67,
+    "head_joint2": 0.0,
+    "lift_joint": -0.13
+  },
+  "root_position_m": [
+    -0.09344,
+    -0.07428,
+    0.0
+  ],
+  "root_quaternion_wxyz": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "table_front_x_m": -0.26012,
+  "base_front_local_x_m": 0.282,
+  "base_front_world_x_m": -0.37544,
+  "base_inset_m": 0.11532,
+  "base_inset_definition": "frontmost base_link shell edge projected horizontally, measured from robot-side table edge toward table interior",
+  "mesh_source": "task_000400/runtime/data/robots/bg2_1063/meshes/m02_base_mobile_assy.stl; URDF scale 0.001",
+  "camera_alignment": {
+    "reference": "reference/robot_position_fit_20261023/real_head.jpg",
+    "previous_root_m": [
+      -0.10812,
+      -0.05909,
+      0.0
+    ],
+    "translation_m": [
+      0.01468,
+      -0.01519,
+      0.0
+    ],
+    "method": "Horizontal translation only, fixed joints, camera and board geometry; fit lower-board silhouette and compare rendered candidates",
+    "rendered_silhouette_rms_before_px": 24.08536396759496,
+    "rendered_silhouette_rms_selected_px": 17.777588920867046,
+    "limitation": "Approximate visual alignment; residual board height/width discrepancy remains. The former 13 cm inset is superseded."
+  },
+  "gripper": {
+    "type": "soft",
+    "tcp_z_m": -0.242,
+    "usd": "assets/robot/bg2_1063_softgripper.usda",
+    "shape_source": "source/cyclo_lab/data/robots/FFW/FFW_SG2_softgripper.usd",
+    "physics": "existing FFW segmented rigid fingertip proxies and rubber material; not deformable silicone"
+  }
+}
