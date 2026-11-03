@@ -19,7 +19,8 @@ DEFAULT_UI_SESSION_STATUS_FILE = "/tmp/cyclo_lab_ui_session.json"
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--task", required=True, help="Registered Cyclo Gym task ID.")
+parser.add_argument("--task", required=True, help="Registered Cyclo Gym ID or six-digit task number.")
+parser.add_argument("--task-variant", default="default", help="Variant when --task is a task number.")
 parser.add_argument(
     "--bridge",
     default="none",
@@ -82,6 +83,14 @@ args_cli = parser.parse_args()
 _IMITATION_LEARNING_ROOT = Path(__file__).resolve().parent / "imitation_learning"
 if str(_IMITATION_LEARNING_ROOT) not in sys.path:
     sys.path.insert(0, str(_IMITATION_LEARNING_ROOT))
+from task_catalog import resolve_task  # noqa: E402
+if len(args_cli.task) == 6 and args_cli.task.isdigit():
+    try:
+        args_cli.task = resolve_task(args_cli.task, args_cli.task_variant)
+    except (KeyError, ValueError) as exc:
+        parser.error(str(exc))
+elif args_cli.task_variant != "default":
+    parser.error("--task-variant requires a six-digit --task number")
 from local_plugins import load_for_task  # noqa: E402
 _LOCAL_PLUGINS = load_for_task(args_cli.task)
 _LOCAL_PLUGINS.configure_launcher_args(args_cli)

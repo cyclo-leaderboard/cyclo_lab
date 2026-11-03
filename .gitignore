@@ -69,12 +69,18 @@ datasets
 tests/
 /source/cyclo_lab/test/
 
-# Local sim-to-real environments and task workflows
+# Keep machine-local environment and task packages out of Git.
 /scripts/sim2real/imitation_learning/environments/local/
-/scripts/sim2real/imitation_learning/tasks/
+/scripts/sim2real/imitation_learning/tasks/local/
+# Track only the portable task catalog and its template here.
+/scripts/sim2real/imitation_learning/tasks/*
+!/scripts/sim2real/imitation_learning/tasks/catalog/
+!/scripts/sim2real/imitation_learning/tasks/README.md
+!/scripts/sim2real/imitation_learning/tasks/task_template.json
 
 # Docker history
 .isaac-lab-docker-history
+/.usd_share/
 
 # Third-party dependency worktrees are managed as submodules. Ignore arbitrary
 # local folders under third_party, but keep submodule roots visible to Git.

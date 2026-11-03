@@ -35,6 +35,7 @@ from isaaclab.app import AppLauncher
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Generate demonstrations for Isaac Lab environments.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
+parser.add_argument("--task-variant", default="default", help="Variant when --task is a task number.")
 parser.add_argument("--generation_num_trials", type=int, help="Number of demos to be generated.", default=None)
 parser.add_argument(
     "--generation_guarantee",
@@ -79,6 +80,11 @@ _IMITATION_LEARNING_ROOT = Path(__file__).resolve().parents[1]
 if str(_IMITATION_LEARNING_ROOT) not in sys.path:
     sys.path.insert(0, str(_IMITATION_LEARNING_ROOT))
 from local_plugins import load_for_task, task_name_from_hdf5  # noqa: E402
+from task_catalog import resolve_task  # noqa: E402
+if args_cli.task and len(args_cli.task) == 6 and args_cli.task.isdigit():
+    args_cli.task = resolve_task(args_cli.task, args_cli.task_variant)
+elif args_cli.task_variant != "default":
+    parser.error("--task-variant requires a six-digit --task number")
 _PLUGIN_TASK_NAME = args_cli.task or task_name_from_hdf5(args_cli.input_file)
 _LOCAL_PLUGINS = load_for_task(_PLUGIN_TASK_NAME)
 _LOCAL_PLUGINS.configure_launcher_args(args_cli)

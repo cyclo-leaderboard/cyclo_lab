@@ -60,16 +60,22 @@ _IMITATION_LEARNING_ROOT = Path(__file__).resolve().parents[1]
 if str(_IMITATION_LEARNING_ROOT) not in sys.path:
     sys.path.insert(0, str(_IMITATION_LEARNING_ROOT))
 from local_plugins import load_for_task  # noqa: E402
+from task_catalog import resolve_task  # noqa: E402
 
 _task_probe = argparse.ArgumentParser(add_help=False)
 _task_probe.add_argument("--task")
+_task_probe.add_argument("--task-variant", default="default")
 _task_probe_args, _ = _task_probe.parse_known_args()
-_LOCAL_PLUGINS = load_for_task(_task_probe_args.task)
+_probe_task = _task_probe_args.task
+if _probe_task and len(_probe_task) == 6 and _probe_task.isdigit():
+    _probe_task = resolve_task(_probe_task, _task_probe_args.task_variant)
+_LOCAL_PLUGINS = load_for_task(_probe_task)
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="cyclo_lab teleoperation for cyclo_lab environments.")
 parser.add_argument("--robot_type", type=str, default="keyboard", choices=['OMY', 'FFW_SG2'], help="Type of robot to use for teleoperation.")
-parser.add_argument("--task", type=str, default=None, help="Name of the task.")
+parser.add_argument("--task", type=str, default=None, help="Gym ID or six-digit task number.")
+parser.add_argument("--task-variant", default="default", help="Variant when --task is a task number.")
 parser.add_argument("--seed", type=int, default=42, help="Seed for the environment.")
 
 # recorder_parameter
@@ -144,6 +150,10 @@ _LOCAL_PLUGINS.add_cli_arguments(parser)
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
 args_cli = parser.parse_args()
+if args_cli.task and len(args_cli.task) == 6 and args_cli.task.isdigit():
+    args_cli.task = resolve_task(args_cli.task, args_cli.task_variant)
+elif args_cli.task_variant != "default":
+    parser.error("--task-variant requires a six-digit --task number")
 _LOCAL_PLUGINS.configure_launcher_args(args_cli)
 if args_cli.camera_view == "operator":
     args_cli.enable_cameras = True

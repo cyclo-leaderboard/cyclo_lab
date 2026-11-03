@@ -1,9 +1,4 @@
-"""Discover local sim-to-real environment and task plugins.
-
-The plugin roots are intentionally ignored by Git.  This module is the tracked
-contract between the reusable recorder/generation tools and locally authored
-scene/task packages.
-"""
+"""Discover tracked task plugins with optional machine-local fallbacks."""
 
 from __future__ import annotations
 
@@ -135,9 +130,21 @@ def load_for_task(task_name: str | None) -> LocalPluginBundle:
 
     environment_key = _snake_case(match.group("environment"))
     task_id = match.group("task_id")
+    # Historical BG2 datasets still store WhiteRoom IDs. Resolve their plugins
+    # through WallRoom while retaining the recorded Gym IDs as read aliases.
+    if environment_key == "white_room" and task_id in {"000400", "000853"}:
+        environment_key = "wall_room"
     root = _plugin_root()
-    environment_path = root / "environments/local" / environment_key / "plugin.py"
-    task_path = root / "tasks/local" / f"task_{task_id}" / "plugin.py"
+    tracked_environment_path = root / "environments" / environment_key / "plugin.py"
+    tracked_task_path = root / "tasks/catalog" / f"task_{task_id}" / "plugin.py"
+    environment_path = (
+        tracked_environment_path if tracked_environment_path.is_file()
+        else root / "environments/local" / environment_key / "plugin.py"
+    )
+    task_path = (
+        tracked_task_path if tracked_task_path.is_file()
+        else root / "tasks/local" / f"task_{task_id}" / "plugin.py"
+    )
     environment = (
         _load_module(environment_path, f"_cyclo_local_environment_{environment_key}")
         if environment_path.is_file()
