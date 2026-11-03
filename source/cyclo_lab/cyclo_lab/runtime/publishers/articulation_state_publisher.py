@@ -55,7 +55,7 @@ class ArticulationStatePublisher:
         self._tf_body_ids = [
             body_id
             for body_id, body_name in enumerate(self._body_names)
-            if body_name not in (self.base_body, self.base_frame)
+            if body_name not in (self.base_body, self.base_frame, "world")
         ]
         self._tf_child_frames = [self._body_names[body_id] for body_id in self._tf_body_ids]
 

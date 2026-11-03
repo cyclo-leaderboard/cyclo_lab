@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import fields, is_dataclass
+import json
+import os
 from pathlib import Path
 import signal
 import sys
@@ -24,7 +26,7 @@ parser.add_argument("--task-variant", default="default", help="Variant when --ta
 parser.add_argument(
     "--bridge",
     default="none",
-    choices=("none", "ffw_sg2", "ffw_sh5"),
+    choices=("none", "auto", "ffw_sg2", "ffw_sh5"),
     help="Optional ROS2-compatible topic bridge.",
 )
 parser.add_argument(
@@ -68,7 +70,7 @@ parser.add_argument(
 parser.add_argument(
     "--ui-session",
     action="store_true",
-    help="Run as a resettable, status-reporting FFW-SG2 session owned by the UI.",
+    help="Run as a resettable, status-reporting UI session with policy control or preview.",
 )
 parser.add_argument(
     "--session-status-file",
@@ -83,20 +85,20 @@ args_cli = parser.parse_args()
 _IMITATION_LEARNING_ROOT = Path(__file__).resolve().parent / "imitation_learning"
 if str(_IMITATION_LEARNING_ROOT) not in sys.path:
     sys.path.insert(0, str(_IMITATION_LEARNING_ROOT))
-from task_catalog import resolve_task  # noqa: E402
-if len(args_cli.task) == 6 and args_cli.task.isdigit():
+from task_catalog import is_task_key, resolve_task  # noqa: E402
+if is_task_key(args_cli.task):
     try:
         args_cli.task = resolve_task(args_cli.task, args_cli.task_variant)
     except (KeyError, ValueError) as exc:
         parser.error(str(exc))
 elif args_cli.task_variant != "default":
-    parser.error("--task-variant requires a six-digit --task number")
+    parser.error("--task-variant requires a catalog task key")
 from local_plugins import load_for_task  # noqa: E402
 _LOCAL_PLUGINS = load_for_task(args_cli.task)
 _LOCAL_PLUGINS.configure_launcher_args(args_cli)
 if args_cli.ui_session:
-    if args_cli.bridge != "ffw_sg2":
-        parser.error("--ui-session requires --bridge ffw_sg2.")
+    if args_cli.bridge not in ("ffw_sg2", "auto"):
+        parser.error("--ui-session requires --bridge ffw_sg2 or auto.")
     args_cli.enable_cameras = True
 if args_cli.camera_view == "operator":
     args_cli.enable_cameras = True
@@ -114,6 +116,9 @@ from isaaclab_tasks.utils import parse_env_cfg
 import cyclo_lab  # noqa: F401 - registers Cyclo Gym tasks after AppLauncher
 _LOCAL_PLUGINS.register_environments()
 from cyclo_lab.runtime.simulation import SimulationSession
+from cyclo_lab.runtime.simulation.object_poses import (
+    OBJECT_REQUEST_FILE, apply_object_pose, snapshot_object_poses,
+)
 
 
 class RateLimiter:
@@ -236,11 +241,12 @@ def _configure_environment():
 
     if args_cli.ui_session:
         enable_ui_session_camera = getattr(env_cfg, "enable_ui_session_camera", None)
-        if not callable(enable_ui_session_camera):
+        if callable(enable_ui_session_camera):
+            enable_ui_session_camera()
+        elif args_cli.bridge == "ffw_sg2":
             raise ValueError(
                 f"Task {args_cli.task} does not support a UI-session camera."
             )
-        enable_ui_session_camera()
     elif args_cli.camera_view == "operator":
         enable_operator_cameras = getattr(env_cfg, "enable_operator_preview_cameras", None)
         if callable(enable_operator_cameras):
@@ -250,7 +256,7 @@ def _configure_environment():
     if args_cli.enable_cameras and not camera_names:
         raise ValueError(f"Task {args_cli.task} does not expose configurable camera sensors.")
 
-    if args_cli.ui_session:
+    if args_cli.ui_session and args_cli.bridge == "ffw_sg2":
         from cyclo_lab.robot_specs.ffw.sg2 import FFW_SG2_CAMERA_TOPICS
 
         missing_bridge_cameras = sorted(set(FFW_SG2_CAMERA_TOPICS).difference(camera_names))
@@ -267,6 +273,26 @@ def _configure_environment():
 
 
 def _make_bridge(env_cfg, env, camera_hz: float):
+    if args_cli.bridge == "auto":
+        from cyclo_lab.runtime.bridges.capabilities import supports_policy_control
+
+        if supports_policy_control(
+            args_cli.task, env.action_manager.active_terms,
+            env.action_manager.total_action_dim,
+        ):
+            from cyclo_lab.runtime.bridges.sg2 import FFWSG2TopicBridge
+
+            return FFWSG2TopicBridge(
+                env, camera_publish_hz=camera_hz, publish_odometry_tf=True,
+                subscribe_reset=True,
+                active_trajectory_groups=getattr(env_cfg, "sim2real_active_trajectory_groups", None),
+                hold_reset_joint_targets=getattr(env_cfg, "hold_reset_joint_targets", False),
+                base_frame=getattr(env_cfg, "sim2real_base_frame", "base_link"),
+                base_body=getattr(env_cfg, "sim2real_base_body", "world"),
+            )
+        from cyclo_lab.runtime.bridges.preview import PreviewTopicBridge
+
+        return PreviewTopicBridge(env, camera_publish_hz=camera_hz, idle_action=getattr(env_cfg, "idle_action", None))
     if args_cli.bridge == "none":
         return None
     if args_cli.bridge == "ffw_sg2":
@@ -281,6 +307,8 @@ def _make_bridge(env_cfg, env, camera_hz: float):
                 env_cfg, "sim2real_active_trajectory_groups", None
             ),
             hold_reset_joint_targets=getattr(env_cfg, "hold_reset_joint_targets", False),
+            base_frame=getattr(env_cfg, "sim2real_base_frame", "base_link"),
+            base_body=getattr(env_cfg, "sim2real_base_body", "world"),
         )
     if args_cli.bridge == "ffw_sh5":
         from cyclo_lab.runtime.bridges.sh5 import FFWSH5TopicBridge
@@ -338,6 +366,8 @@ def main() -> None:
     keyboard_reset_requested = threading.Event()
     keyboard_mobile_keys: set[str] = set()
     keyboard_mobile_lock = threading.Lock()
+    object_overrides: dict[str, dict[str, list[float]]] = {}
+    handled_object_request_id = ""
     previous_signal_handlers = {}
 
     def _request_shutdown(_signum, _frame) -> None:
@@ -384,10 +414,12 @@ def main() -> None:
         configured_idle_action = getattr(env_cfg, "idle_action", None)
         if configured_idle_action is not None:
             if len(configured_idle_action) != env.action_manager.total_action_dim:
-                raise ValueError("Configured idle action does not match the environment action dimension.")
-            zero_action[:] = torch.as_tensor(
-                configured_idle_action, device=env.device, dtype=zero_action.dtype
-            )
+                if getattr(bridge, "accepts_policy_commands", True):
+                    raise ValueError("Configured idle action does not match the environment action dimension.")
+            else:
+                zero_action[:] = torch.as_tensor(
+                    configured_idle_action, device=env.device, dtype=zero_action.dtype
+                )
         operator_view = _make_operator_view(env_cfg, env)
         if not args_cli.ui_session:
             from pynput.keyboard import Listener
@@ -415,8 +447,10 @@ def main() -> None:
             _begin_bridge_control_activation(bridge)
             control_enabled = True
             print(
-                "[Control] UI-launched simulation session; policy actions are active "
-                "and remain active after reset."
+                "[Control] UI-launched simulation session; "
+                + ("policy actions are active and remain active after reset."
+                   if getattr(bridge, "accepts_policy_commands", True)
+                   else "preview only; policy commands are not subscribed.")
             )
         elif bridge is None:
             mode = "Configured idle-action" if configured_idle_action is not None else "Zero-action"
@@ -436,12 +470,54 @@ def main() -> None:
         camera_sequence = 0
         force_heartbeat_after_reset = False
         if session is not None:
-            session.ready(control_hz=control_hz, camera_hz=camera_hz)
+            Path(OBJECT_REQUEST_FILE).unlink(missing_ok=True)
+            robot = env.scene["robot"]
+            initial_positions = {
+                name: float(value)
+                for name, value in zip(
+                    robot.data.joint_names, robot.data.joint_pos[0].detach().cpu().tolist()
+                )
+            }
+            session.ready(
+                control_hz=control_hz, camera_hz=camera_hz,
+                control_enabled=bool(getattr(bridge, "accepts_policy_commands", True)),
+                initial_joint_positions=initial_positions,
+                camera_names=tuple(env.scene.sensors),
+                published_camera_names=tuple(getattr(
+                    getattr(bridge, "camera_publishers", None), "writers", {}
+                )),
+                object_poses=snapshot_object_poses(env),
+            )
 
         with torch.inference_mode():
             while simulation_app.is_running() and not shutdown_requested.is_set():
                 if args_cli.max_runtime > 0.0 and time.perf_counter() - start_time >= args_cli.max_runtime:
                     break
+
+                if session is not None:
+                    try:
+                        object_request = json.loads(Path(OBJECT_REQUEST_FILE).read_text(encoding="utf-8"))
+                    except (OSError, ValueError):
+                        object_request = None
+                    if (
+                        isinstance(object_request, dict)
+                        and object_request.get("id")
+                        and object_request["id"] != handled_object_request_id
+                        and object_request.get("session_pid") == os.getpid()
+                    ):
+                        handled_object_request_id = object_request["id"]
+                        object_name = str(object_request.get("name", ""))
+                        try:
+                            pose = apply_object_pose(env, object_name, object_request.get("pose"))
+                            object_overrides[object_name] = pose
+                            session.object_result(
+                                handled_object_request_id, name=object_name, pose=pose,
+                                objects=snapshot_object_poses(env),
+                            )
+                        except (ValueError, KeyError, RuntimeError, TypeError) as exc:
+                            session.object_result(
+                                handled_object_request_id, name=object_name, error=str(exc),
+                            )
 
                 start_requested = keyboard_start_requested.is_set()
                 if start_requested:
@@ -460,6 +536,8 @@ def main() -> None:
                     if session is not None:
                         session.begin_reset(reset_source)
                     env.reset()
+                    for object_name, pose in object_overrides.items():
+                        apply_object_pose(env, object_name, pose)
                     if bridge is not None:
                         bridge.reset()
                         _latch_bridge_reset_targets(bridge)
@@ -515,6 +593,11 @@ def main() -> None:
                         observation_sequence=observation_sequence,
                         camera_sequence=camera_sequence,
                         force=force_session_heartbeat,
+                        object_poses=(
+                            snapshot_object_poses(env)
+                            if total_steps % max(1, round(control_hz)) == 0 or force_session_heartbeat
+                            else None
+                        ),
                     )
                     if force_session_heartbeat:
                         force_heartbeat_after_reset = False

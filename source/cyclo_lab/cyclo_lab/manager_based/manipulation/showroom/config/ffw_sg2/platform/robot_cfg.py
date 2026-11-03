@@ -110,8 +110,16 @@ def enable_sg2_showroom_operator_cameras(env_cfg) -> None:
 
 
 def enable_sg2_showroom_ui_session_camera(env_cfg) -> None:
-    """Attach only the center external camera streamed by a UI session."""
+    """Attach the Waypoint Seed operator views to a UI session."""
 
-    env_cfg.scene.cam_overhead_center = make_ffw_sg2_overhead_camera_cfg(
-        "center", update_period=0.0
-    )
+    operator_parent = getattr(env_cfg, "waypoint_operator_camera_parent", None)
+    for side in ("left", "center", "right"):
+        camera = make_ffw_sg2_overhead_camera_cfg(side, update_period=0.0)
+        if side != "center":
+            # Keep the top view fixed; place the side views near the head.
+            camera.offset.pos = (0.18, 0.55 if side == "left" else -0.55, 1.20)
+            camera.spawn.focal_length = 8.0
+        # BG2 and other local assets can use a different articulation root.
+        if operator_parent:
+            camera.prim_path = f"{operator_parent}/cam_overhead_{side}"
+        setattr(env_cfg.scene, f"cam_overhead_{side}", camera)

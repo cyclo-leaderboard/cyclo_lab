@@ -48,10 +48,26 @@ class SimulationSession:
     def state(self) -> str:
         return str(self._status["state"])
 
-    def ready(self, *, control_hz: float, camera_hz: float) -> None:
+    def ready(
+        self, *, control_hz: float, camera_hz: float,
+        control_enabled: bool = True,
+        initial_joint_positions: dict[str, float] | None = None,
+        camera_names: tuple[str, ...] = (),
+        published_camera_names: tuple[str, ...] = (),
+        object_poses: dict[str, dict] | None = None,
+    ) -> None:
         self._status["control_hz"] = float(control_hz)
         self._status["camera_hz"] = float(camera_hz)
-        self._transition("ready", "Environment and topic bridge are ready")
+        self._status["control_enabled"] = bool(control_enabled)
+        self._status["initial_joint_positions"] = initial_joint_positions or {}
+        self._status["camera_names"] = list(camera_names)
+        self._status["published_camera_names"] = list(published_camera_names)
+        self._status["objects"] = object_poses or {}
+        self._transition(
+            "ready",
+            "Environment and policy bridge are ready" if control_enabled
+            else "Environment preview is ready",
+        )
 
     def begin_reset(self, source: str) -> None:
         self._transition("resetting", f"Reset requested by {source}")
@@ -68,14 +84,31 @@ class SimulationSession:
         camera_sequence: int,
         force: bool = False,
         min_interval_s: float = 1.0,
+        object_poses: dict[str, dict] | None = None,
     ) -> None:
         now = time.monotonic()
+        # Preserve sampled object poses even if this call is throttled; the
+        # next heartbeat will publish the latest sample.
+        if object_poses is not None:
+            self._status["objects"] = object_poses
         if not force and now - self._last_heartbeat < min_interval_s:
             return
         self._last_heartbeat = now
         self._status["step_count"] = int(step_count)
         self._status["observation_sequence"] = int(observation_sequence)
         self._status["camera_sequence"] = int(camera_sequence)
+        self._status["updated_at"] = time.time()
+        self._write()
+
+    def object_result(
+        self, request_id: str, *, name: str, pose: dict | None = None,
+        objects: dict[str, dict] | None = None, error: str = "",
+    ) -> None:
+        self._status["object_result"] = {
+            "id": request_id, "name": name, "pose": pose, "error": error,
+        }
+        if objects is not None:
+            self._status["objects"] = objects
         self._status["updated_at"] = time.time()
         self._write()
 

@@ -17,7 +17,7 @@ _CATALOG_TASKS = Path(__file__).resolve().parent / "tasks/catalog"
 _SOURCE_TASKS = (
     _REPO / "source/cyclo_lab/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks"
 )
-_TASK_ID = re.compile(r"\d{6}\Z")
+_TASK_ID = re.compile(r"(?:\d{6}|\d{3,6}_[a-z][a-z0-9_]*)\Z")
 _SCENE_NAME = {"showroom": "Showroom", "white_room": "WhiteRoom", "wall_room": "WallRoom"}
 
 
@@ -87,8 +87,14 @@ def validate_catalog() -> dict[str, int]:
     return counts
 
 
+def is_task_key(value: str) -> bool:
+    """Recognize a catalog key, optionally prefixed with task_."""
+    return bool(_TASK_ID.fullmatch(value.removeprefix("task_")))
+
+
 def resolve_task(task_id: str, variant: str = "default") -> str:
     """Return the Gym ID for a task number and optional variant."""
+    task_id = task_id.removeprefix("task_")
     catalog = load_catalog()
     if task_id not in catalog:
         raise KeyError(f"Unknown task number {task_id}")
@@ -104,7 +110,7 @@ def resolve_task(task_id: str, variant: str = "default") -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Resolve task numbers to Gym environment IDs")
-    parser.add_argument("task_id", nargs="?", help="Six-digit task number")
+    parser.add_argument("task_id", nargs="?", help="Six-digit task number or named derivative such as 901_haeun")
     parser.add_argument("--variant", default="default", help="Environment variant")
     parser.add_argument("--list", action="store_true", help="List all task numbers")
     parser.add_argument("--validate", action="store_true", help="Check all task packages without Isaac Sim")

@@ -1374,6 +1374,13 @@
           option.value = option.textContent = name;
           select.append(option);
         }
+        for (const name of catalog.setup_environments || []) {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = `${name} (setup: waypoint control unavailable)`;
+          option.disabled = true;
+          select.append(option);
+        }
         select.value = "";
         applyEnvironmentLimits();
         buildInitialJoints();

@@ -74,9 +74,16 @@ class FFWSG2TopicBridge:
         cmd_vel_timeout: float = DEFAULT_CMD_VEL_TIMEOUT_SECONDS,
         active_trajectory_groups: Sequence[str] | None = None,
         hold_reset_joint_targets: bool = False,
+        base_frame: str = BASE_FRAME,
+        base_body: str = BASE_BODY,
     ) -> None:
         self.env = env
         self.robot = env.scene["robot"]
+        if base_body != BASE_BODY and base_body not in self.robot.data.body_names:
+            raise ValueError(
+                f"Configured base body '{base_body}' is not in robot bodies: "
+                f"{list(self.robot.data.body_names)}"
+            )
         self.domain_id = ros_domain_id()
         self.publish_odometry_tf = publish_odometry_tf
         self.cmd_vel_timeout = float(cmd_vel_timeout)
@@ -190,8 +197,8 @@ class FFWSG2TopicBridge:
             self.robot,
             joint_names=self.published_joint_names,
             joint_states_topic=JOINT_STATES_TOPIC,
-            base_frame=BASE_FRAME,
-            base_body=BASE_BODY,
+            base_frame=base_frame,
+            base_body=base_body,
             odom_topic=ODOM_TOPIC if publish_odometry_tf else None,
             tf_topic=TF_TOPIC if publish_odometry_tf else None,
             odom_frame=ODOM_FRAME,

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import ast
 import importlib.util
 import math
 import os
 from pathlib import Path
 import re
 import runpy
+import sys
 import xml.etree.ElementTree as ET
 
 
@@ -22,10 +22,12 @@ BG2_URDF_FILE = Path(os.environ.get(
     "BG2_URDF_PATH",
     str(LAB_ROOT.parent / "cyclo_intelligence/shared/shared/robot_configs/urdf/ffw_bg2_rev4_follower.urdf"),
 ))
-REGISTRATION_ROOTS = (
-    LAB_ROOT / "source/cyclo_lab/cyclo_lab/manager_based/manipulation",
-    LAB_ROOT / "scripts/sim2real/imitation_learning/tasks/local",
-)
+IMITATION_LEARNING_ROOT = LAB_ROOT / "scripts/sim2real/imitation_learning"
+CATALOG_TASK_ROOT = IMITATION_LEARNING_ROOT / "tasks/catalog"
+LOCAL_TASK_ROOT = IMITATION_LEARNING_ROOT / "tasks/local"
+if str(IMITATION_LEARNING_ROOT) not in sys.path:
+    sys.path.insert(0, str(IMITATION_LEARNING_ROOT))
+from task_catalog import load_catalog
 INITIAL_POSE_HOLD_S = 0.2
 IK_SOLVER_LABELS = {
     "iterative_lm": "Iterative LM",
@@ -39,7 +41,9 @@ def local_robot_spec(environment: str | None = None) -> dict:
     """Read an optional task-local robot contract without loading Isaac."""
     match = re.search(r"-Task(\d{6})(?:-|$)", environment or "")
     if match:
-        path = REGISTRATION_ROOTS[1] / f"task_{match[1]}" / "plugin.py"
+        path = CATALOG_TASK_ROOT / f"task_{match[1]}" / "plugin.py"
+        if not path.is_file():
+            path = LOCAL_TASK_ROOT / f"task_{match[1]}" / "plugin.py"
         if path.is_file():
             spec = importlib.util.spec_from_file_location("_waypoint_task_contract", path)
             module = importlib.util.module_from_spec(spec)
@@ -99,30 +103,27 @@ def joint_contract(environment: str | None = None) -> tuple[tuple[str, ...], dic
 
 
 def discover_environments() -> list[str]:
-    """List SG2 environments and task-local BG2 environments with a robot contract."""
+    """List waypoint-capable nominal and Random task environments."""
     names: set[str] = set()
-    for root in REGISTRATION_ROOTS:
-        if not root.is_dir():
+    for task in load_catalog().values():
+        if task.get("status") == "setup":
             continue
-        for path in root.rglob("*.py"):
-            try:
-                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-            except (OSError, SyntaxError, UnicodeError):
-                continue
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.Call):
-                    continue
-                func = node.func
-                if not (isinstance(func, ast.Attribute) and func.attr == "register"):
-                    continue
-                for keyword in node.keywords:
-                    if keyword.arg != "id" or not isinstance(keyword.value, ast.Constant):
-                        continue
-                    name = keyword.value.value
-                    if isinstance(name, str) and name.startswith("Cyclo-"):
-                        if "FFW-SG2" in name or ("FFW-BG2" in name and "-Task" in name and local_robot_spec(name)):
-                            names.add(name)
+        candidates = [task["default_env_id"]]
+        if "random" in task["variants"]:
+            candidates.append(task["variants"]["random"])
+        for name in candidates:
+            if task["robot"] == "FFW-BG2":
+                local_robot_spec(name)
+            names.add(name)
     return sorted(names)
+
+
+def discover_setup_environments() -> list[str]:
+    """Show unfinished task scenes in the UI without offering waypoint control."""
+    return sorted(
+        task["default_env_id"] for task in load_catalog().values()
+        if task.get("status") == "setup"
+    )
 
 
 def validate_object_poses(raw: object) -> dict:

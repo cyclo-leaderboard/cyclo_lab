@@ -27,6 +27,7 @@ from seed_plan import (
     LAB_ROOT,
     SG2_URDF_FILE,
     discover_environments,
+    discover_setup_environments,
     joint_contract,
     local_robot_spec,
     materialize_plan_targets,
@@ -564,12 +565,15 @@ class Handler(BaseHTTPRequestHandler):
             self._reply(200, (HERE / "index.html").read_bytes(), "text/html; charset=utf-8")
         elif request.path == "/api/catalog":
             joints, limits = joint_contract()
+            environments = discover_environments()
             self._json(200, {
-                "environments": discover_environments(), "joints": joints, "limits": limits,
+                "environments": environments,
+                "setup_environments": discover_setup_environments(),
+                "joints": joints, "limits": limits,
                 "limits_source": str(SG2_URDF_FILE) if SG2_URDF_FILE.is_file() else "Cyclo Lab URDF-derived 19D limits",
                 "ik_solvers": IK_SOLVER_LABELS,
                 "environment_limits": {
-                    name: joint_contract(name)[1] for name in discover_environments()
+                    name: joint_contract(name)[1] for name in environments
                     if "FFW-BG2" in name
                 },
             })

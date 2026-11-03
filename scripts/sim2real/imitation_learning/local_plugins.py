@@ -14,7 +14,7 @@ from typing import Any
 
 
 _TASK_PATTERN = re.compile(
-    r"^Cyclo-Real-(?P<environment>.+?)-Task(?P<task_id>\d{6})(?:-|$)"
+    r"^Cyclo-Real-(?P<environment>.+?)-Task(?P<task_id>\d{6}|\d{3,6}_[a-z][a-z0-9_]*)(?:-|$)"
 )
 
 
