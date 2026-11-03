@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "task_id": "000400",
+  "environment": "wall_room",
+  "robot": "FFW-BG2",
+  "kind": "task",
+  "default_env_id": "Cyclo-Real-WallRoom-Task000400-FFW-BG2-v0",
+  "variants": {
+    "random": "Cyclo-Real-WallRoom-Task000400-Random-FFW-BG2-v0"
+  },
+  "base_task": "000300"
+}
