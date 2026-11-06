@@ -1,0 +1,68 @@
+{
+  "cucumber": {
+    "bounds_m": [
+      [
+        -0.08,
+        -0.0175,
+        0.0
+      ],
+      [
+        0.08,
+        0.0175,
+        0.035
+      ]
+    ],
+    "size_m": [
+      0.16,
+      0.035,
+      0.035
+    ],
+    "parts": [
+      {
+        "watertight_after_uv_seam_weld": true,
+        "winding_consistent": true,
+        "signed_volume_m3": 0.00010189742870513479,
+        "triangles": 71680,
+        "vertices": 36066
+      }
+    ]
+  },
+  "onion": {
+    "bounds_m": [
+      [
+        -0.035,
+        -0.03409824483777896,
+        0.0
+      ],
+      [
+        0.035,
+        0.03390175516222105,
+        0.055
+      ]
+    ],
+    "size_m": [
+      0.07,
+      0.068,
+      0.055
+    ],
+    "parts": [
+      {
+        "watertight_after_uv_seam_weld": true,
+        "winding_consistent": true,
+        "signed_volume_m3": 0.000117431320575502,
+        "triangles": 73728,
+        "vertices": 37058
+      },
+      {
+        "watertight_after_uv_seam_weld": true,
+        "winding_consistent": true,
+        "signed_volume_m3": 1.221285976005083e-07,
+        "triangles": 1792,
+        "vertices": 930
+      }
+    ]
+  },
+  "method": "Photo silhouette fitted and dimension constrained mesh; photo UV projection with authored unseen completion. Not a metric photogrammetry scan.",
+  "material": "Captured RGB, approximate broad shading removal; authored roughness and micro-normal estimates. MaterialAnything not run.",
+  "onion_height_convention": "55 mm total, including the short green neck; bulb width 70 mm."
+}

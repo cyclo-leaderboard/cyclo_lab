@@ -1,0 +1,39 @@
+{
+  "asset": "/home/robotis-ai/cyclo_lab/scripts/sim2real/imitation_learning/tasks/catalog/task_000901/runtime/data/objects/plate_holder_v1/wood_plate_holder.usda",
+  "measured": {
+    "length_m": 0.295,
+    "width_m": 0.12,
+    "height_m": 0.09,
+    "base_rail_square_m": 0.017,
+    "peg_diameter_m": 0.009,
+    "peg_count_each_row": 7,
+    "peg_center_spacing_m": 0.045
+  },
+  "derived": {
+    "peg_centers_x_m": [
+      -0.135,
+      -0.09,
+      -0.045,
+      0.0,
+      0.045,
+      0.09,
+      0.135
+    ],
+    "peg_center_end_margin_m": 0.012499999999999983,
+    "rail_centers_y_m": [
+      -0.0515,
+      0.0515
+    ],
+    "rail_outer_width_m": 0.12,
+    "peg_top_z_m": 0.09,
+    "crossbrace_radius_m_visual_estimate": 0.005,
+    "crossbrace_x_m_visual_estimate": [
+      -0.1125,
+      0.1125
+    ]
+  },
+  "source_photos": [
+    "head.jpg",
+    "right.jpg"
+  ]
+}

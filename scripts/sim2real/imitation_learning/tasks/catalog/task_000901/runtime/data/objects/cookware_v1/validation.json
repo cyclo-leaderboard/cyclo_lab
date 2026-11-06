@@ -1,0 +1,284 @@
+{
+  "pot": {
+    "parts": [
+      {
+        "part": "Shell",
+        "material_keys": [
+          "outside",
+          "inside"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 0.00028743715305941,
+        "triangles": 6528
+      },
+      {
+        "part": "RolledRim",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 1.941302673326574e-06,
+        "triangles": 12288
+      },
+      {
+        "part": "LeftHandle",
+        "material_keys": [
+          "handle"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 1.6234877148769858e-05,
+        "triangles": 2048
+      },
+      {
+        "part": "LeftBracket",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 2.3490000000000024e-06,
+        "triangles": 12
+      },
+      {
+        "part": "LeftRivet0",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 4.4626882582056896e-08,
+        "triangles": 1120
+      },
+      {
+        "part": "LeftRivet1",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 4.4626882582056896e-08,
+        "triangles": 1120
+      },
+      {
+        "part": "RightHandle",
+        "material_keys": [
+          "handle"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 1.6234877148769858e-05,
+        "triangles": 2048
+      },
+      {
+        "part": "RightBracket",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 2.349000000000002e-06,
+        "triangles": 12
+      },
+      {
+        "part": "RightRivet0",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 4.462688258205732e-08,
+        "triangles": 1120
+      },
+      {
+        "part": "RightRivet1",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 4.462688258205732e-08,
+        "triangles": 1120
+      }
+    ],
+    "size_m": [
+      0.34,
+      0.2,
+      0.08
+    ],
+    "min_m": [
+      -0.17,
+      -0.1,
+      0.0
+    ],
+    "max_m": [
+      0.17,
+      0.1,
+      0.08
+    ]
+  },
+  "lid": {
+    "parts": [
+      {
+        "part": "GlassDome",
+        "material_keys": [
+          "glass"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 5.940084048127816e-05,
+        "triangles": 52992
+      },
+      {
+        "part": "MetalRim",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 3.939471788599082e-06,
+        "triangles": 12288
+      },
+      {
+        "part": "Knob",
+        "material_keys": [
+          "knob"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 1.1906605115175628e-05,
+        "triangles": 2688
+      },
+      {
+        "part": "KnobCollar",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 1.850708548571338e-07,
+        "triangles": 12288
+      },
+      {
+        "part": "SteamVentRim",
+        "material_keys": [
+          "steel"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 1.905516033136465e-08,
+        "triangles": 12288
+      },
+      {
+        "part": "SteamVentDarkCenter",
+        "material_keys": [
+          "dark"
+        ],
+        "watertight": true,
+        "winding_consistent": true,
+        "volume_m3": 4.538791169036792e-09,
+        "triangles": 768
+      }
+    ],
+    "size_m": [
+      0.20779999999999998,
+      0.20779999999999998,
+      0.046400000000000004
+    ],
+    "min_m": [
+      -0.10389999999999999,
+      -0.10389999999999999,
+      0.0
+    ],
+    "max_m": [
+      0.10389999999999999,
+      0.10389999999999999,
+      0.046400000000000004
+    ]
+  },
+  "measurements": {
+    "pot_outer_diameter_m": 0.2,
+    "pot_body_height_m": 0.08,
+    "pot_total_handle_span_m": 0.34,
+    "dimensions_source": "User measurements, 2026-11-02",
+    "lid_diameter_m": 0.205,
+    "lid_diameter_source": "Estimated to fit measured 200 mm pot; not independently measured",
+    "pot_position_m": [
+      -0.55862,
+      -0.1,
+      0.7002
+    ],
+    "pot_rotation_wxyz": [
+      0.9945218953682733,
+      0,
+      0,
+      -0.10452846326765347
+    ],
+    "lid_position_m": [
+      -0.55862,
+      -0.385,
+      0.7002
+    ],
+    "source_image": "/home/robotis-ai/agents/experiments/2026-11-02_material_capture/extracted/samples/head/00s.jpg",
+    "source_sha256": "4c9af9c45635c17d43cb4696545629f1b012be37a88097b04d2415e47eaedd73",
+    "source_video": "/home/robotis-ai/agents/experiments/2026-11-02_material_capture/extracted/head.mp4"
+  },
+  "sampled_image_srgb": {
+    "inside": [
+      0.8941176470588236,
+      0.8784313725490196,
+      0.7725490196078432
+    ],
+    "outside": [
+      0.45098039215686275,
+      0.44313725490196076,
+      0.396078431372549
+    ],
+    "handle": [
+      0.7803921568627451,
+      0.7607843137254902,
+      0.6549019607843137
+    ]
+  },
+  "estimated_material_srgb": {
+    "inside": [
+      0.91,
+      0.895,
+      0.785
+    ],
+    "outside": [
+      0.59,
+      0.575,
+      0.515
+    ],
+    "handle": [
+      0.82,
+      0.79,
+      0.66
+    ],
+    "knob": [
+      0.83,
+      0.75,
+      0.58
+    ],
+    "steel": [
+      0.72,
+      0.74,
+      0.75
+    ],
+    "dark": [
+      0.05,
+      0.045,
+      0.035
+    ],
+    "glass": [
+      1,
+      1,
+      1
+    ]
+  },
+  "method": "Reference-guided model using user dimensions; hidden bottom, wall thickness and material response inferred. No photogrammetry or MaterialAnything run.",
+  "glass": "OmniGlass in USD is the intended accurate representation; GLB uses approximate alpha transparency."
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "task_id": "000901",
+  "environment": "white_room",
+  "robot": "FFW-SG2",
+  "kind": "task",
+  "status": "setup",
+  "default_env_id": "Cyclo-Real-WhiteRoom-Task000901-Environment-v0",
+  "variants": {
+    "plate_holder": "Cyclo-Real-WhiteRoom-Task000901-PlateHolder-FFW-SG2-v0",
+    "mimic_seed": "Cyclo-Real-WhiteRoom-Task000901-Bimanual-Mimic-Seed-FFW-SG2-v0",
+    "mimic_generate": "Cyclo-Real-WhiteRoom-Task000901-Bimanual-Mimic-Generate-FFW-SG2-v0"
+  },
+  "base_task": "000400"
+}

@@ -1,0 +1,79 @@
+{
+  "parts": [
+    {
+      "part": "GlassDome",
+      "material_keys": [
+        "glass"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 5.940084048127816e-05,
+      "triangles": 52992
+    },
+    {
+      "part": "MetalRim",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 3.939471788599082e-06,
+      "triangles": 12288
+    },
+    {
+      "part": "Knob",
+      "material_keys": [
+        "knob"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 1.1906605115175628e-05,
+      "triangles": 2688
+    },
+    {
+      "part": "KnobCollar",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 1.850708548571338e-07,
+      "triangles": 12288
+    },
+    {
+      "part": "SteamVentRim",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 1.905516033136465e-08,
+      "triangles": 12288
+    },
+    {
+      "part": "SteamVentDarkCenter",
+      "material_keys": [
+        "dark"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 4.538791169036792e-09,
+      "triangles": 768
+    }
+  ],
+  "size_m": [
+    0.20779999999999998,
+    0.20779999999999998,
+    0.046400000000000004
+  ],
+  "min_m": [
+    -0.10389999999999999,
+    -0.10389999999999999,
+    0.0
+  ],
+  "max_m": [
+    0.10389999999999999,
+    0.10389999999999999,
+    0.046400000000000004
+  ]
+}

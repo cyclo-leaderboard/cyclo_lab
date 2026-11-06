@@ -1,0 +1,120 @@
+{
+  "parts": [
+    {
+      "part": "Shell",
+      "material_keys": [
+        "outside",
+        "inside"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 0.00028743715305941,
+      "triangles": 6528
+    },
+    {
+      "part": "RolledRim",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 1.941302673326574e-06,
+      "triangles": 12288
+    },
+    {
+      "part": "LeftHandle",
+      "material_keys": [
+        "handle"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 1.6234877148769858e-05,
+      "triangles": 2048
+    },
+    {
+      "part": "LeftBracket",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 2.3490000000000024e-06,
+      "triangles": 12
+    },
+    {
+      "part": "LeftRivet0",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 4.4626882582056896e-08,
+      "triangles": 1120
+    },
+    {
+      "part": "LeftRivet1",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 4.4626882582056896e-08,
+      "triangles": 1120
+    },
+    {
+      "part": "RightHandle",
+      "material_keys": [
+        "handle"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 1.6234877148769858e-05,
+      "triangles": 2048
+    },
+    {
+      "part": "RightBracket",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 2.349000000000002e-06,
+      "triangles": 12
+    },
+    {
+      "part": "RightRivet0",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 4.462688258205732e-08,
+      "triangles": 1120
+    },
+    {
+      "part": "RightRivet1",
+      "material_keys": [
+        "steel"
+      ],
+      "watertight": true,
+      "winding_consistent": true,
+      "volume_m3": 4.462688258205732e-08,
+      "triangles": 1120
+    }
+  ],
+  "size_m": [
+    0.34,
+    0.2,
+    0.08
+  ],
+  "min_m": [
+    -0.17,
+    -0.1,
+    0.0
+  ],
+  "max_m": [
+    0.17,
+    0.1,
+    0.08
+  ]
+}
