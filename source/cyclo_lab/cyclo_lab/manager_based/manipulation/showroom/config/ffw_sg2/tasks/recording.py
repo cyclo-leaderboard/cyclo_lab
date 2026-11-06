@@ -11,15 +11,19 @@ import importlib.util
 from pathlib import Path
 from typing import Any
 
+from .catalog_runtime import catalog_root
+
 
 _SUPPORT_SPECS = (
     (("Task000001", "Task000002"), "coffee_transport/recording.py"),
-    (("Task000525",), "task_000525/recording.py"),
+    (("Task000525",), catalog_root() / "task_000525/runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/recording.py"),
 )
 
 
 def _load_support(relative_path: str):
-    module_path = Path(__file__).resolve().parent / relative_path
+    module_path = Path(relative_path)
+    if not module_path.is_absolute():
+        module_path = Path(__file__).resolve().parent / module_path
     module_name = f"_cyclo_recording_{module_path.parent.name}"
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     if spec is None or spec.loader is None:

@@ -22,19 +22,19 @@ that contains only lateral velocity is not a Task000525 policy dataset.
 
 | Responsibility | File |
 | --- | --- |
-| identity, target, cameras, and rates | [spec.py](spec.py) |
-| region-to-object and region-to-arm rules | [arrangement.py](arrangement.py) |
-| measured shelf geometry | [layout.py](layout.py) |
-| randomization profiles | [profiles.py](profiles.py) |
-| environment and reset wiring | [env_cfg.py](env_cfg.py) |
-| learned-policy schema | [policy.py](policy.py) |
-| task-owned recording lifecycle | [recording.py](recording.py) |
-| live route controller | [online_dijkstra.py](online_dijkstra.py) |
-| SDG adapter geometry | [locomanipulation_sdg_contract.py](locomanipulation_sdg_contract.py) |
-| SDG environment adapter | [locomanipulation_sdg_env.py](locomanipulation_sdg_env.py) |
-| appearance-only randomization | [appearance_events.py](appearance_events.py) |
-| fixed destination mat | [destination_mat.py](destination_mat.py) |
-| Task525-only arm hold tuning | [robot_stability.py](robot_stability.py) |
+| identity, target, cameras, and rates | [spec.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/spec.py) |
+| region-to-object and region-to-arm rules | [arrangement.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/arrangement.py) |
+| measured shelf geometry | [layout.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/layout.py) |
+| randomization profiles | [profiles.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/profiles.py) |
+| environment and reset wiring | [env_cfg.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/env_cfg.py) |
+| learned-policy schema | [policy.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/policy.py) |
+| task-owned recording lifecycle | [recording.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/recording.py) |
+| live route controller | [online_dijkstra.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/online_dijkstra.py) |
+| SDG adapter geometry | [locomanipulation_sdg_contract.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/locomanipulation_sdg_contract.py) |
+| SDG environment adapter | [locomanipulation_sdg_env.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/locomanipulation_sdg_env.py) |
+| appearance-only randomization | [appearance_events.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/appearance_events.py) |
+| fixed destination mat | [destination_mat.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/destination_mat.py) |
+| Task525-only arm hold tuning | [robot_stability.py](runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000525/robot_stability.py) |
 
 The generic recorder discovers Task525 through the shared task recorder
 registry. Task-specific CLI validation, metadata, callbacks, holds, and
@@ -84,14 +84,14 @@ environment:
 ```
 
 Task-local export, visual replay, and staging audit tools live in
-[`scripts/.../tasks/task_000525`](../../../../../../../../../../scripts/sim2real/imitation_learning/tasks/task_000525).
+[`scripts/`](scripts/).
 The repository-wide LeRobot v3 audit is
-[`tasks/common/audit_lerobot_v30.py`](../../../../../../../../../../scripts/sim2real/imitation_learning/tasks/common/audit_lerobot_v30.py).
+[`tasks/common/audit_lerobot_v30.py`](../../common/audit_lerobot_v30.py).
 
 ## Validation
 
 Manual Isaac checks are grouped under
-[`validation/task_000525`](../../../../../../../../../../scripts/sim2real/imitation_learning/validation/task_000525):
+[`validation/task_000525`](../../../validation/task_000525):
 
 - `validate_mobile.py`: record/replay all three body velocity directions;
 - `validate_online_dijkstra.py`: record and inspect the live route segment;
