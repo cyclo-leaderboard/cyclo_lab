@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../../.." && pwd)"
-TASK_GENERATOR="${SCRIPT_DIR}/tasks/task_000525/generate_trajectories.py"
+TASK_GENERATOR="${SCRIPT_DIR}/tasks/catalog/task_000525/scripts/generate_trajectories.py"
 TASK_ID="Cyclo-Real-Showroom-Task000525-Trajectory-Generation-FFW-SG2-v0"
 ISAAC_PYTHON_BIN="${ISAAC_PYTHON_BIN:-/isaac-sim/python.sh}"
 KIT_ARGS="--ext-folder ${REPO_ROOT}/source --enable cyclo_lab"

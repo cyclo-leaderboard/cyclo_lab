@@ -18,19 +18,15 @@ def add_cli_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task000400_seed_ids", help="Comma-separated fixed seed IDs.")
 
 
-def _append(module_name: str, path: Path) -> None:
-    module = importlib.import_module(module_name)
-    candidate = str(path)
-    if candidate not in module.__path__:
-        module.__path__.append(candidate)
-
-
 def register_environments() -> None:
+    from cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks.catalog_runtime import mount_task_package, register_scene_dependency
+    # The Task000300 base configuration still imports shared WhiteRoom assets.
+    register_scene_dependency("white_room")
     assets = "cyclo_lab.assets.environments"
     package = "cyclo_lab.manager_based.manipulation.white_room.config.ffw_sg2"
-    for root in (_TASK_300 / "runtime", _ROOT / "runtime"):
-        _append(assets, root / "cyclo_lab/assets/environments")
-        _append(package, root / "cyclo_lab/manager_based/manipulation/white_room/config/ffw_sg2")
+    for task_id in ("000300", TASK_ID):
+        mount_task_package(task_id, assets, "cyclo_lab/assets/environments")
+        mount_task_package(task_id, package, "cyclo_lab/manager_based/manipulation/white_room/config/ffw_sg2")
 
     import gymnasium as gym
 

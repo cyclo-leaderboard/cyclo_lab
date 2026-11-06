@@ -12,10 +12,10 @@ Isaac-dependent render step from the final dataset writer:
 
 1. `data_converter/isaac_hdf5_to_replay_staging.py` exports the original
    recorded observations without rerunning physics.
-2. `tasks/task_000458/replay_with_randomization.py` reruns Task000458 actions
+2. `tasks/catalog/task_000458/scripts/replay_with_randomization.py` reruns Task000458 actions
    in Isaac and writes randomized observations using the same staging schema.
 3. Review the manifests and videos. Task000458 keeps its contract-aware HDF5
-   viewer and three-way replay comparison in `tasks/task_000458/`.
+   viewer and three-way replay comparison in `tasks/catalog/task_000458/scripts/`.
 4. `data_converter/merge_replay_staging.py` combines accepted staging
    directories by hard-linking their arrays and videos when possible. It exists
    so accepted original and augmented episodes can be assembled without

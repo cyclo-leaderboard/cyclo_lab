@@ -9,7 +9,6 @@ from pathlib import Path
 TASK_ID = "000200"
 ENVIRONMENT = "white_room"
 _ROOT = Path(__file__).resolve().parent
-_RUNTIME = _ROOT / "runtime"
 
 
 def add_cli_arguments(parser) -> None:
@@ -20,17 +19,11 @@ def add_cli_arguments(parser) -> None:
     )
 
 
-def _append_package_path(module_name: str, relative: str) -> None:
-    module = importlib.import_module(module_name)
-    candidate = str(_RUNTIME / relative)
-    if candidate not in module.__path__:
-        module.__path__.append(candidate)
-
-
 def register_environments() -> None:
-    _append_package_path("cyclo_lab.assets.environments", "cyclo_lab/assets/environments")
+    from cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks.catalog_runtime import mount_task_package
+    mount_task_package(TASK_ID, "cyclo_lab.assets.environments", "cyclo_lab/assets/environments")
     package = "cyclo_lab.manager_based.manipulation.white_room.config.ffw_sg2"
-    _append_package_path(package, "cyclo_lab/manager_based/manipulation/white_room/config/ffw_sg2")
+    mount_task_package(TASK_ID, package, "cyclo_lab/manager_based/manipulation/white_room/config/ffw_sg2")
     import gymnasium as gym
 
     gym.register(

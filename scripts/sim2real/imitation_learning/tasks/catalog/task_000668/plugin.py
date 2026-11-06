@@ -1,19 +1,15 @@
 """Local Showroom Task000668 registration."""
 
 from __future__ import annotations
-import importlib
-from pathlib import Path
 
 TASK_ID = "000668"
 ENVIRONMENT = "showroom"
-_ROOT = Path(__file__).resolve().parent
 
 def add_cli_arguments(_parser): pass
 
 def register_environments():
-    tasks = importlib.import_module("cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks")
-    path = str(_ROOT / "runtime")
-    if path not in tasks.__path__: tasks.__path__.append(path)
+    from cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks.catalog_runtime import mount_task_package
+    mount_task_package(TASK_ID, "cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks", "")
     import gymnasium as gym
     package = "cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks.task_000668"
     gym.register(id="Cyclo-Real-Showroom-Task000668-FFW-SG2-v0", entry_point="isaaclab.envs:ManagerBasedRLEnv", kwargs={"env_cfg_entry_point": f"{package}.env_cfg:Task000668EnvCfg"}, disable_env_checker=True)

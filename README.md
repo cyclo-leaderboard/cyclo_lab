@@ -301,8 +301,8 @@ and reset. Add `--camera_view operator` to show the six-camera operator
 dashboard; the dashboard is for teleoperation and is not written as an extra
 HDF5 observation. Seed task parameters such as task id, target object, policy cameras,
 and showroom USD are defined in
-`source/cyclo_lab/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000458/spec.py`;
-add a new spec and gym registration for the next seed task.
+`scripts/sim2real/imitation_learning/tasks/catalog/task_000458/runtime/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks/task_000458/spec.py`;
+add a catalog manifest and plugin for the next seed task.
 
 ```bash
 python scripts/sim2real/imitation_learning/recorder/record_demos.py \

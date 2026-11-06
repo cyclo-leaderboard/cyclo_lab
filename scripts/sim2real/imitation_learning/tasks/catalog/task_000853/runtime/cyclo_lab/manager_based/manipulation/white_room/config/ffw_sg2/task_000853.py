@@ -35,8 +35,6 @@ class Task000853EnvCfg(Task000400EnvCfg):
         self.scene.cam_head.offset.pos=HEAD_CAMERA_OFFSET_POS_M
         self.scene.cam_head.offset.rot=HEAD_CAMERA_OFFSET_ROT_WXYZ
         self.scene.environment.spawn.usd_path=ROOM_USD_PATH
-        # Match the 1063 head image at head_joint1=0.83 rad.
-        self.scene.light.spawn.intensity=0.5
         from cyclo_lab.robot_specs.ffw.sg2 import FFW_SG2_ACTION_JOINT_NAMES
         joints=dict(ROBOT_SETUP['joint_positions'])
         # Task 853 simulation pose: lower the lift 1 cm from the captured -0.13 m setup.

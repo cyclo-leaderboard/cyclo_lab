@@ -6,13 +6,13 @@ ENVIRONMENT='wall_room'
 _ROOT=Path(__file__).resolve().parent
 
 def register_environments():
+    from cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks.catalog_runtime import mount_task_package, register_scene_dependency
+    register_scene_dependency('white_room')
     assets='cyclo_lab.assets.environments'
     package='cyclo_lab.manager_based.manipulation.white_room.config.ffw_sg2'
-    for task in ('task_000300','task_000400','task_000853'):
-        runtime=_ROOT.parent/task/'runtime'
+    for task_id in ('000300','000400',TASK_ID):
         for module_name,relative in ((assets,'cyclo_lab/assets/environments'),(package,'cyclo_lab/manager_based/manipulation/white_room/config/ffw_sg2')):
-            module=importlib.import_module(module_name);path=str(runtime/relative)
-            if path not in module.__path__:module.__path__.append(path)
+            mount_task_package(task_id,module_name,relative,required=module_name!=assets or task_id!='000853')
     import gymnasium as gym
     gym.register(
         id='Cyclo-Real-WallRoom-Task000853-FFW-BG2-v0',

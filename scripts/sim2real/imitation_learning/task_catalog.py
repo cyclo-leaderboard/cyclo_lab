@@ -1,7 +1,7 @@
 """Task-number lookup for registered Cyclo Lab environments.
 
-This module reads tracked task manifests without importing Isaac Sim. Local
-plugins and assets can stay ignored while task-number mappings remain portable.
+Canonical task manifests and plugins live together under tasks/catalog.
+This module can read them without importing Isaac Sim.
 """
 
 from __future__ import annotations
@@ -12,11 +12,7 @@ from pathlib import Path
 import re
 
 
-_REPO = Path(__file__).resolve().parents[3]
 _CATALOG_TASKS = Path(__file__).resolve().parent / "tasks/catalog"
-_SOURCE_TASKS = (
-    _REPO / "source/cyclo_lab/cyclo_lab/manager_based/manipulation/showroom/config/ffw_sg2/tasks"
-)
 _TASK_ID = re.compile(r"(?:\d{6}|\d{3,6}_[a-z][a-z0-9_]*)\Z")
 _SCENE_NAME = {"showroom": "Showroom", "white_room": "WhiteRoom", "wall_room": "WallRoom"}
 
@@ -24,7 +20,6 @@ _SCENE_NAME = {"showroom": "Showroom", "white_room": "WhiteRoom", "wall_room": "
 def load_catalog() -> dict[str, dict]:
     """Load and validate every task-number manifest in this checkout."""
     paths = sorted(_CATALOG_TASKS.glob("task_*/task.json"))
-    paths += sorted(_SOURCE_TASKS.rglob("task_*/task.json"))
     catalog: dict[str, dict] = {}
     env_owners: dict[str, str] = {}
     for path in paths:
@@ -75,15 +70,12 @@ def validate_catalog() -> dict[str, int]:
         counts[task["kind"]] += 1
         counts["setup"] += task.get("status") == "setup"
         task_dir = Path(task["manifest_path"]).parent
-        if _CATALOG_TASKS in task_dir.parents:
-            plugin_path = task_dir / "plugin.py"
-            if not plugin_path.is_file():
-                raise ValueError(f"Task {task_id} has no tracked plugin.py")
-            bundle = load_for_task(task["default_env_id"])
-            if bundle.task_path != plugin_path or bundle.task_id != task_id or bundle.environment_key != task["environment"]:
-                raise ValueError(f"Task {task_id} does not resolve to its tracked plugin")
-        elif not (task_dir / "env_cfg.py").is_file() or not (task_dir / "spec.py").is_file():
-            raise ValueError(f"Tracked task {task_id} lacks env_cfg.py or spec.py")
+        plugin_path = task_dir / "plugin.py"
+        if not plugin_path.is_file():
+            raise ValueError(f"Task {task_id} has no tracked plugin.py")
+        bundle = load_for_task(task["default_env_id"])
+        if bundle.task_path != plugin_path or bundle.task_id != task_id or bundle.environment_key != task["environment"]:
+            raise ValueError(f"Task {task_id} does not resolve to its tracked plugin")
     return counts
 
 

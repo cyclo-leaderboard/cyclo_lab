@@ -8,19 +8,14 @@ from pathlib import Path
 TASK_ID = "000100"
 ENVIRONMENT = "white_room"
 _ROOT = Path(__file__).resolve().parent
-_RUNTIME = _ROOT / "runtime"
 
 def add_cli_arguments(parser):
     parser.add_argument("--task000100_seed_ids", help="Comma-separated fixed seed IDs.")
 
-def _append(module_name, relative):
-    module = importlib.import_module(module_name)
-    path = str(_RUNTIME / relative)
-    if path not in module.__path__: module.__path__.append(path)
-
 def register_environments():
+    from cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks.catalog_runtime import mount_task_package
     package = "cyclo_lab.manager_based.manipulation.white_room.config.ffw_sg2"
-    _append(package, "cyclo_lab/manager_based/manipulation/white_room/config/ffw_sg2")
+    mount_task_package(TASK_ID, package, "cyclo_lab/manager_based/manipulation/white_room/config/ffw_sg2")
     import gymnasium as gym
     gym.register(id="Cyclo-Real-WhiteRoom-Task000100-FFW-SG2-v0", entry_point="isaaclab.envs:ManagerBasedRLEnv", kwargs={"env_cfg_entry_point": f"{package}.task_000100:Task000100EnvCfg"}, disable_env_checker=True)
     gym.register(id="Cyclo-Real-WhiteRoom-Task000100-Random-FFW-SG2-v0", entry_point="isaaclab.envs:ManagerBasedRLEnv", kwargs={"env_cfg_entry_point": f"{package}.task_000100:Task000100RandomEnvCfg"}, disable_env_checker=True)
