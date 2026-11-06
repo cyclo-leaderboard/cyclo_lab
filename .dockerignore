@@ -6,6 +6,9 @@
 datasets/
 logs/
 outputs/
+scripts/sim2real/imitation_learning/experiments/**/output/
+scripts/sim2real/imitation_learning/experiments/**/cache/
+scripts/sim2real/imitation_learning/experiments/**/deps/
 docker/workspace/
 docker/zenoh_cache/
 docker/.cyclo-lab-docker-history

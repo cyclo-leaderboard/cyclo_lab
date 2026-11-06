@@ -26,3 +26,15 @@ Isaac-dependent render step from the final dataset writer:
 Review decisions are tracked outside the generated dataset rather than encoded
 as `review_status` or `training_ready` gates. The staging scripts still refuse
 to overwrite an existing output directory.
+
+## Portable Task901 and cucumber experiments
+
+- [Task000901 scene and plate-holder setup](tasks/catalog/task_000901/README.md)
+  includes local assets; its Mimic pilot still needs its explicitly supplied
+  original reference archive.
+- [Task000759 source-guided cuRobo experiment](experiments/task_000759_skillgen_curobo/README.md)
+  includes one numerical seed, fixed settings, an isolated Docker installation
+  and fresh-output plan/generate commands. It preserves the initial SkillGen-core
+  experiment, but the final generator is a custom cuRobo/joint-optimization path.
+  Cloning alone is not a dependency installation or a guarantee of identical
+  physical outcomes on another GPU.

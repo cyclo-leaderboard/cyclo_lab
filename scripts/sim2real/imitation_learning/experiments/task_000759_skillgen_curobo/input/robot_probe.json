@@ -1,0 +1,1400 @@
+{
+  "source_frames": 115,
+  "body_names": [
+    "world",
+    "left_wheel_steer_link",
+    "arm_base_link",
+    "rear_wheel_steer_link",
+    "right_wheel_steer_link",
+    "left_wheel_drive_link",
+    "arm_l_link1",
+    "arm_r_link1",
+    "head_link1",
+    "rear_wheel_drive_link",
+    "right_wheel_drive_link",
+    "arm_l_link2",
+    "arm_r_link2",
+    "head_link2",
+    "arm_l_link3",
+    "arm_r_link3",
+    "arm_l_link4",
+    "arm_r_link4",
+    "arm_l_link5",
+    "arm_r_link5",
+    "arm_l_link6",
+    "arm_r_link6",
+    "arm_l_link7",
+    "arm_r_link7",
+    "gripper_l_rh_p12_rn_r1",
+    "gripper_l_rh_p12_rn_l1",
+    "gripper_r_rh_p12_rn_r1",
+    "gripper_r_rh_p12_rn_l1",
+    "gripper_l_rh_p12_rn_r2",
+    "gripper_l_rh_p12_rn_l2",
+    "gripper_r_rh_p12_rn_r2",
+    "gripper_r_rh_p12_rn_l2"
+  ],
+  "joint_names": [
+    "left_wheel_steer",
+    "lift_joint",
+    "rear_wheel_steer",
+    "right_wheel_steer",
+    "left_wheel_drive",
+    "arm_l_joint1",
+    "arm_r_joint1",
+    "head_joint1",
+    "rear_wheel_drive",
+    "right_wheel_drive",
+    "arm_l_joint2",
+    "arm_r_joint2",
+    "head_joint2",
+    "arm_l_joint3",
+    "arm_r_joint3",
+    "arm_l_joint4",
+    "arm_r_joint4",
+    "arm_l_joint5",
+    "arm_r_joint5",
+    "arm_l_joint6",
+    "arm_r_joint6",
+    "arm_l_joint7",
+    "arm_r_joint7",
+    "gripper_l_joint1",
+    "gripper_l_joint3",
+    "gripper_r_joint1",
+    "gripper_r_joint3",
+    "gripper_l_joint2",
+    "gripper_l_joint4",
+    "gripper_r_joint2",
+    "gripper_r_joint4"
+  ],
+  "joints": [
+    {
+      "name": "left_wheel_steer",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/world"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/left_wheel_steer_link"
+      ],
+      "localPos0": [
+        0.1370999962091446,
+        0.25540000200271606,
+        0.2755500078201294
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -1080.0,
+      "upper": 1080.0
+    },
+    {
+      "name": "left_wheel_drive",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/left_wheel_steer_link"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/left_wheel_drive_link"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.18905000388622284
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -Infinity,
+      "upper": Infinity
+    },
+    {
+      "name": "lift_joint",
+      "type": "PhysicsPrismaticJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/world"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_base_link"
+      ],
+      "localPos0": [
+        -0.019899999722838402,
+        0.0,
+        1.4315999746322632
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -0.5,
+      "upper": 0.0
+    },
+    {
+      "name": "arm_l_joint1",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_base_link"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link1"
+      ],
+      "localPos0": [
+        0.0,
+        0.10450000315904617,
+        0.0
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -179.9087371826172,
+      "upper": 179.9087371826172
+    },
+    {
+      "name": "arm_l_joint2",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link1"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link2"
+      ],
+      "localPos0": [
+        0.0,
+        0.12300000339746475,
+        0.0
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 179.9087371826172
+    },
+    {
+      "name": "arm_l_joint3",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link2"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link3"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.16500000655651093
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -179.9087371826172,
+      "upper": 179.9087371826172
+    },
+    {
+      "name": "arm_l_joint4",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link3"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link4"
+      ],
+      "localPos0": [
+        0.0410039983689785,
+        0.0,
+        -0.13500000536441803
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -168.22613525390625,
+      "upper": 61.79922866821289
+    },
+    {
+      "name": "arm_l_joint5",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link4"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link5"
+      ],
+      "localPos0": [
+        -0.0410039983689785,
+        0.0,
+        -0.14890000224113464
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -179.9087371826172,
+      "upper": 179.9087371826172
+    },
+    {
+      "name": "arm_l_joint6",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link5"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link6"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.10409999638795853
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -89.9543685913086,
+      "upper": 89.9543685913086
+    },
+    {
+      "name": "arm_l_joint7",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link6"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link7"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.0885000005364418
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lower": -104.28404235839844,
+      "upper": 90.55024719238281
+    },
+    {
+      "name": "gripper_l_joint1",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link7"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/left_gripper/gripper_l_rh_p12_rn_r1"
+      ],
+      "localPos0": [
+        4.895675420613088e-09,
+        -0.00800000037997961,
+        -0.12600000202655792
+      ],
+      "localPos1": [
+        0.0,
+        -2.7755575615628914e-17,
+        0.0
+      ],
+      "localRot0": [
+        1.910685465164705e-15,
+        -1.0,
+        -4.371138828673793e-08,
+        -4.371138828673793e-08
+      ],
+      "localRot1": [
+        1.0,
+        9.957982702228592e-17,
+        3.308722450212111e-24,
+        4.352772758523973e-24
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 63.02535629272461
+    },
+    {
+      "name": "gripper_l_joint2",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/left_gripper/gripper_l_rh_p12_rn_r1"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/left_gripper/gripper_l_rh_p12_rn_r2"
+      ],
+      "localPos0": [
+        6.435437738261385e-10,
+        0.049363404512405396,
+        0.028500020503997803
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        -2.698411336202691e-24,
+        -1.6543612251060553e-22,
+        -9.957982702228592e-17,
+        1.0
+      ],
+      "localRot1": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 63.025360107421875
+    },
+    {
+      "name": "gripper_l_joint3",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_l_link7"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/left_gripper/gripper_l_rh_p12_rn_l1"
+      ],
+      "localPos0": [
+        3.4969107609583716e-09,
+        0.00800000037997961,
+        -0.12600000202655792
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        4.371138828673793e-08,
+        -4.371138828673793e-08,
+        1.0,
+        1.910685465164705e-15
+      ],
+      "localRot1": [
+        -4.849501510032182e-24,
+        -1.6874484496081765e-22,
+        -7.309628313519615e-17,
+        1.0
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 63.02535629272461
+    },
+    {
+      "name": "gripper_l_joint4",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/left_gripper/gripper_l_rh_p12_rn_l1"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/left_gripper/gripper_l_rh_p12_rn_l2"
+      ],
+      "localPos0": [
+        -3.871019477186266e-11,
+        -0.049363404512405396,
+        0.028500020503997803
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        9.957982702228592e-17,
+        3.308722450212111e-24,
+        4.352772758523973e-24
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 63.025360107421875
+    },
+    {
+      "name": "arm_r_joint1",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_base_link"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link1"
+      ],
+      "localPos0": [
+        0.0,
+        -0.10450000315904617,
+        0.0
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -179.9087371826172,
+      "upper": 179.9087371826172
+    },
+    {
+      "name": "arm_r_joint2",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link1"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link2"
+      ],
+      "localPos0": [
+        0.0,
+        -0.12300000339746475,
+        0.0
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lower": -179.9087371826172,
+      "upper": 0.0
+    },
+    {
+      "name": "arm_r_joint3",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link2"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link3"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.16500000655651093
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -179.9087371826172,
+      "upper": 179.9087371826172
+    },
+    {
+      "name": "arm_r_joint4",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link3"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link4"
+      ],
+      "localPos0": [
+        0.0410039983689785,
+        0.0,
+        -0.13500000536441803
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -168.22613525390625,
+      "upper": 61.79922866821289
+    },
+    {
+      "name": "arm_r_joint5",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link4"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link5"
+      ],
+      "localPos0": [
+        -0.0410039983689785,
+        0.0,
+        -0.14890000224113464
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -179.9087371826172,
+      "upper": 179.9087371826172
+    },
+    {
+      "name": "arm_r_joint6",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link5"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link6"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.10409999638795853
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -89.9543685913086,
+      "upper": 89.9543685913086
+    },
+    {
+      "name": "arm_r_joint7",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link6"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link7"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.0885000005364418
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lower": -90.55024719238281,
+      "upper": 104.28404235839844
+    },
+    {
+      "name": "gripper_r_joint1",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link7"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/right_gripper/gripper_r_rh_p12_rn_r1"
+      ],
+      "localPos0": [
+        4.895675420613088e-09,
+        -0.00800000037997961,
+        -0.12600000202655792
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        1.1102230246251565e-16
+      ],
+      "localRot0": [
+        1.910685465164705e-15,
+        -1.0,
+        -4.371138828673793e-08,
+        -4.371138828673793e-08
+      ],
+      "localRot1": [
+        1.0,
+        9.957982702228592e-17,
+        3.308722450212111e-24,
+        4.352772758523973e-24
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 63.02535629272461
+    },
+    {
+      "name": "gripper_r_joint2",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/right_gripper/gripper_r_rh_p12_rn_r1"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/right_gripper/gripper_r_rh_p12_rn_r2"
+      ],
+      "localPos0": [
+        6.435437738261385e-10,
+        0.049363404512405396,
+        0.028500020503997803
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        -2.698411336202691e-24,
+        -1.6543612251060553e-22,
+        -9.957982702228592e-17,
+        1.0
+      ],
+      "localRot1": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 63.025360107421875
+    },
+    {
+      "name": "gripper_r_joint3",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_r_link7"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/right_gripper/gripper_r_rh_p12_rn_l1"
+      ],
+      "localPos0": [
+        3.4969107609583716e-09,
+        0.00800000037997961,
+        -0.12600000202655792
+      ],
+      "localPos1": [
+        0.0,
+        2.7755575615628914e-17,
+        0.0
+      ],
+      "localRot0": [
+        4.371138828673793e-08,
+        -4.371138828673793e-08,
+        1.0,
+        1.910685465164705e-15
+      ],
+      "localRot1": [
+        -4.849501510032182e-24,
+        -1.6874484496081765e-22,
+        -7.309628313519615e-17,
+        1.0
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 63.025360107421875
+    },
+    {
+      "name": "gripper_r_joint4",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/right_gripper/gripper_r_rh_p12_rn_l1"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/right_gripper/gripper_r_rh_p12_rn_l2"
+      ],
+      "localPos0": [
+        -3.871019130241571e-11,
+        -0.049363404512405396,
+        0.028500020503997803
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        9.957982702228592e-17,
+        3.308722450212111e-24,
+        4.352772758523973e-24
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lower": 0.0,
+      "upper": 63.025360107421875
+    },
+    {
+      "name": "head_joint1",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/arm_base_link"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/head_link1"
+      ],
+      "localPos0": [
+        0.049487799406051636,
+        0.0,
+        0.10212299972772598
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -13.275431632995605,
+      "upper": 57.295780181884766
+    },
+    {
+      "name": "head_joint2",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/head_link1"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/head_link2"
+      ],
+      "localPos0": [
+        0.03656940162181854,
+        0.0,
+        0.05637969821691513
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -20.05352210998535,
+      "upper": 20.05352210998535
+    },
+    {
+      "name": "rear_wheel_steer",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/world"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/rear_wheel_steer_link"
+      ],
+      "localPos0": [
+        -0.289900004863739,
+        0.0,
+        0.2755500078201294
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -1080.0,
+      "upper": 1080.0
+    },
+    {
+      "name": "rear_wheel_drive",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/rear_wheel_steer_link"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/rear_wheel_drive_link"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.18905000388622284
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -Infinity,
+      "upper": Infinity
+    },
+    {
+      "name": "right_wheel_steer",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/world"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/right_wheel_steer_link"
+      ],
+      "localPos0": [
+        0.1370999962091446,
+        -0.25540000200271606,
+        0.2755500078201294
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lower": -1080.0,
+      "upper": 1080.0
+    },
+    {
+      "name": "right_wheel_drive",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "/World/Robot/ffw_sg2_follower/right_wheel_steer_link"
+      ],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/right_wheel_drive_link"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        -0.18905000388622284
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lower": -Infinity,
+      "upper": Infinity
+    },
+    {
+      "name": "FixedJoint",
+      "type": "PhysicsFixedJoint",
+      "parent": [],
+      "child": [
+        "/World/Robot/ffw_sg2_follower/world"
+      ],
+      "localPos0": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localPos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot0": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localRot1": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": null,
+      "lower": null,
+      "upper": null
+    }
+  ],
+  "sample_tcp": {
+    "0": [
+      [
+        0.36178346106710874,
+        -0.0008293127574453799,
+        -0.9322617870204989,
+        0.24024381332861075
+      ],
+      [
+        0.0002325428837867516,
+        0.9999996534997742,
+        -0.0007993273038971395,
+        -0.22737809435329223
+      ],
+      [
+        0.9322621268839096,
+        7.239255413141042e-05,
+        0.3617835285598379,
+        0.8006930303109816
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "30": [
+      [
+        0.48136105905336074,
+        -0.3661692961228796,
+        -0.7963740185389665,
+        0.5457083454825431
+      ],
+      [
+        0.21251169418978638,
+        0.9302072583579014,
+        -0.29925446752030865,
+        -0.26942334365185255
+      ],
+      [
+        0.850370690146135,
+        -0.02518934447641885,
+        0.5255808085016372,
+        0.7619920045174765
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "35": [
+      [
+        0.5495801951450038,
+        -0.4312819535922411,
+        -0.7155120443500863,
+        0.5642343773682472
+      ],
+      [
+        0.2622446958138004,
+        0.9022170431499159,
+        -0.3423917735100399,
+        -0.24830906700133065
+      ],
+      [
+        0.7932145539650083,
+        0.0005324992799927986,
+        0.6089420233672578,
+        0.7344807761012372
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "40": [
+      [
+        0.5737476160218178,
+        -0.4492854356052597,
+        -0.6848038189600528,
+        0.5618339966335023
+      ],
+      [
+        0.2851971429511847,
+        0.893379796483614,
+        -0.3471816943437226,
+        -0.24733308223187195
+      ],
+      [
+        0.7677735751911251,
+        0.0038905768066588853,
+        0.6407094510387288,
+        0.7212409871421077
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "45": [
+      [
+        0.5753178974296647,
+        -0.43941227238883573,
+        -0.6898740260157569,
+        0.5631256168753621
+      ],
+      [
+        0.27366009420601056,
+        0.8982397397747934,
+        -0.34391208575516585,
+        -0.2500432747873671
+      ],
+      [
+        0.7707914567094442,
+        0.009067787127560789,
+        0.6370230023322094,
+        0.7225756942379954
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "55": [
+      [
+        0.4211158018627569,
+        -0.29800858037774364,
+        -0.8566518356034317,
+        0.572683607133809
+      ],
+      [
+        0.11908521382765146,
+        0.9544724772302083,
+        -0.2734977185602318,
+        -0.3051713371301625
+      ],
+      [
+        0.899155266496899,
+        0.013159644040441842,
+        0.43743185812148966,
+        0.8586200026394655
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "65": [
+      [
+        0.2682417589854734,
+        -0.32151273312610645,
+        -0.9081166891838077,
+        0.5535092633681489
+      ],
+      [
+        -0.15299240322978425,
+        0.9164826419108641,
+        -0.36966591894582096,
+        -0.2255888584853109
+      ],
+      [
+        0.9511254824103677,
+        0.2380947910263142,
+        0.19664991023588463,
+        1.0057766673516269
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "80": [
+      [
+        0.3247515372249857,
+        -0.44813009976407553,
+        -0.8328960635970425,
+        0.5312840302529016
+      ],
+      [
+        -0.16442220758345066,
+        0.8404677239977314,
+        -0.5163132213796756,
+        -0.0783861763627215
+      ],
+      [
+        0.9313977543044613,
+        0.3046201217968258,
+        0.19926064506844693,
+        0.9989612235711495
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  }
+}

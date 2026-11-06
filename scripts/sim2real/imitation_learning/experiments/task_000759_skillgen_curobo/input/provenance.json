@@ -1,0 +1,50 @@
+{
+  "dataset_host": "/home/robotis-ai/cyclo_intelligence/docker/workspace/dataset/Dongkkka/task_000759_move_vegetable_v30",
+  "selection_seed": 759,
+  "random_rank": 5,
+  "episode_index": 93,
+  "source_episode_index": 95,
+  "frames": 115,
+  "fps": 15,
+  "metadata": {
+    "episode_index": 93,
+    "data/chunk_index": 0,
+    "data/file_index": 0,
+    "dataset_from_index": 10029,
+    "dataset_to_index": 10144,
+    "videos/observation.images.rgb.cam_left_head/chunk_index": 0,
+    "videos/observation.images.rgb.cam_left_head/file_index": 93,
+    "videos/observation.images.rgb.cam_left_head/from_timestamp": 0.0,
+    "videos/observation.images.rgb.cam_left_head/to_timestamp": 7.666666666666667,
+    "videos/observation.images.rgb.cam_left_wrist/chunk_index": 0,
+    "videos/observation.images.rgb.cam_left_wrist/file_index": 93,
+    "videos/observation.images.rgb.cam_left_wrist/from_timestamp": 0.0,
+    "videos/observation.images.rgb.cam_left_wrist/to_timestamp": 7.666666666666667,
+    "videos/observation.images.rgb.cam_right_head/chunk_index": 0,
+    "videos/observation.images.rgb.cam_right_head/file_index": 93,
+    "videos/observation.images.rgb.cam_right_head/from_timestamp": 0.0,
+    "videos/observation.images.rgb.cam_right_head/to_timestamp": 7.666666666666667,
+    "videos/observation.images.rgb.cam_right_wrist/chunk_index": 0,
+    "videos/observation.images.rgb.cam_right_wrist/file_index": 93,
+    "videos/observation.images.rgb.cam_right_wrist/from_timestamp": 0.0,
+    "videos/observation.images.rgb.cam_right_wrist/to_timestamp": 7.666666666666667,
+    "tasks": [
+      "Pick up the vegetable on the right side of the table with the nearest gripper and place it in the basket on the left."
+    ],
+    "length": 115,
+    "source_episode_index": 95,
+    "distance_traveled": 0.0012,
+    "left_eef_displacement": 0.0,
+    "right_eef_displacement": 0.0,
+    "meta/episodes/chunk_index": 0,
+    "meta/episodes/file_index": 0
+  },
+  "source_parquet_sha256": "ce60eb79d5ed8258f9e479f2943a1b6d76e6b6e626fb9cf7132931680da855fa",
+  "action_max_abs_state_difference": 0.9311263561248779,
+  "base_velocity_max_abs": [
+    0.0005585926701314747,
+    6.677891633444233e-06,
+    0.0012760302051901817
+  ],
+  "source_outcome": "Visually reviewed source_review.jpg: right gripper picks cucumber, lifts it, and releases into the yellow basket. Metadata has no success flag. This is real-video verification, not simulation success."
+}

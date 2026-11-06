@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="sg2_right_skillgen">
+  <link name="world" />
+  <link name="arm_base_link" />
+  <joint name="lift_joint" type="fixed">
+    <parent link="world" />
+    <child link="arm_base_link" />
+    <origin xyz="-0.019899999722838402 0.0 1.231609970331192" rpy="0.0 0.0 0.0" />
+  </joint>
+  <link name="arm_r_link1" />
+  <joint name="arm_r_joint1" type="revolute">
+    <parent link="arm_base_link" />
+    <child link="arm_r_link1" />
+    <origin xyz="0.0 -0.10450000315904617 0.0" rpy="0.0 0.0 0.0" />
+    <axis xyz="0.0 1.0 0.0" />
+    <limit lower="-3.139999816941817" upper="3.139999816941817" effort="60" velocity="1.5" />
+  </joint>
+  <link name="arm_r_link2" />
+  <joint name="arm_r_joint2" type="revolute">
+    <parent link="arm_r_link1" />
+    <child link="arm_r_link2" />
+    <origin xyz="0.0 -0.12300000339746475 0.0" rpy="0.0 0.0 0.0" />
+    <axis xyz="1.0 0.0 0.0" />
+    <limit lower="-3.139999816941817" upper="0.0" effort="60" velocity="1.5" />
+  </joint>
+  <link name="arm_r_link3" />
+  <joint name="arm_r_joint3" type="revolute">
+    <parent link="arm_r_link2" />
+    <child link="arm_r_link3" />
+    <origin xyz="0.0 0.0 -0.16500000655651093" rpy="0.0 0.0 0.0" />
+    <axis xyz="0.0 0.0 1.0" />
+    <limit lower="-3.139999816941817" upper="3.139999816941817" effort="60" velocity="1.5" />
+  </joint>
+  <link name="arm_r_link4" />
+  <joint name="arm_r_joint4" type="revolute">
+    <parent link="arm_r_link3" />
+    <child link="arm_r_link4" />
+    <origin xyz="0.0410039983689785 0.0 -0.13500000536441803" rpy="0.0 0.0 0.0" />
+    <axis xyz="0.0 1.0 0.0" />
+    <limit lower="-2.936099948085971" upper="1.0786000154531854" effort="60" velocity="1.5" />
+  </joint>
+  <link name="arm_r_link5" />
+  <joint name="arm_r_joint5" type="revolute">
+    <parent link="arm_r_link4" />
+    <child link="arm_r_link5" />
+    <origin xyz="-0.0410039983689785 0.0 -0.14890000224113464" rpy="0.0 0.0 0.0" />
+    <axis xyz="0.0 0.0 1.0" />
+    <limit lower="-3.139999816941817" upper="3.139999816941817" effort="60" velocity="1.5" />
+  </joint>
+  <link name="arm_r_link6" />
+  <joint name="arm_r_joint6" type="revolute">
+    <parent link="arm_r_link5" />
+    <child link="arm_r_link6" />
+    <origin xyz="0.0 0.0 -0.10409999638795853" rpy="0.0 0.0 0.0" />
+    <axis xyz="0.0 1.0 0.0" />
+    <limit lower="-1.5699999084709084" upper="1.5699999084709084" effort="60" velocity="1.5" />
+  </joint>
+  <link name="arm_r_link7" />
+  <joint name="arm_r_joint7" type="revolute">
+    <parent link="arm_r_link6" />
+    <child link="arm_r_link7" />
+    <origin xyz="0.0 0.0 -0.0885000005364418" rpy="0.0 0.0 0.0" />
+    <axis xyz="1.0 0.0 0.0" />
+    <limit lower="-1.5803999520018313" upper="1.8200998964432853" effort="60" velocity="1.5" />
+  </joint>
+  <link name="tcp" />
+  <joint name="tcp_fixed" type="fixed">
+    <parent link="arm_r_link7" />
+    <child link="tcp" />
+    <origin xyz="0 0 -0.2" rpy="0 0 0" />
+  </joint>
+</robot>

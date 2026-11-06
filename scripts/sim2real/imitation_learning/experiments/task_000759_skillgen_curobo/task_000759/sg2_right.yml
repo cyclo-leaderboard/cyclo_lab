@@ -1,0 +1,240 @@
+robot_cfg:
+  kinematics:
+    use_usd_kinematics: false
+    urdf_path: /experiment/task_000759/sg2_right.urdf
+    asset_root_path: /experiment/task_000759
+    base_link: world
+    ee_link: tcp
+    link_names: &id001
+    - arm_r_link1
+    - arm_r_link2
+    - arm_r_link3
+    - arm_r_link4
+    - arm_r_link5
+    - arm_r_link6
+    - arm_r_link7
+    - tcp
+    collision_link_names: *id001
+    collision_spheres:
+      arm_r_link1:
+      - center:
+        - 0.0
+        - -0.0
+        - 0.0
+        radius: 0.045
+      - center:
+        - 0.0
+        - -0.04100000113248825
+        - 0.0
+        radius: 0.045
+      - center:
+        - 0.0
+        - -0.0820000022649765
+        - 0.0
+        radius: 0.045
+      - center:
+        - 0.0
+        - -0.12300000339746475
+        - 0.0
+        radius: 0.045
+      arm_r_link2:
+      - center:
+        - 0.0
+        - 0.0
+        - -0.0
+        radius: 0.045
+      - center:
+        - 0.0
+        - 0.0
+        - -0.04125000163912773
+        radius: 0.045
+      - center:
+        - 0.0
+        - 0.0
+        - -0.08250000327825546
+        radius: 0.045
+      - center:
+        - 0.0
+        - 0.0
+        - -0.1237500049173832
+        radius: 0.045
+      - center:
+        - 0.0
+        - 0.0
+        - -0.16500000655651093
+        radius: 0.045
+      arm_r_link3:
+      - center:
+        - 0.0
+        - 0.0
+        - -0.0
+        radius: 0.045
+      - center:
+        - 0.013667999456326166
+        - 0.0
+        - -0.04500000178813934
+        radius: 0.045
+      - center:
+        - 0.027335998912652332
+        - 0.0
+        - -0.09000000357627869
+        radius: 0.045
+      - center:
+        - 0.0410039983689785
+        - 0.0
+        - -0.13500000536441803
+        radius: 0.045
+      arm_r_link4:
+      - center:
+        - -0.0
+        - 0.0
+        - -0.0
+        radius: 0.045
+      - center:
+        - -0.013667999456326166
+        - 0.0
+        - -0.04963333408037821
+        radius: 0.045
+      - center:
+        - -0.027335998912652332
+        - 0.0
+        - -0.09926666816075642
+        radius: 0.045
+      - center:
+        - -0.0410039983689785
+        - 0.0
+        - -0.14890000224113464
+        radius: 0.045
+      arm_r_link5:
+      - center:
+        - 0.0
+        - 0.0
+        - -0.0
+        radius: 0.03
+      - center:
+        - 0.0
+        - 0.0
+        - -0.05204999819397926
+        radius: 0.03
+      - center:
+        - 0.0
+        - 0.0
+        - -0.10409999638795853
+        radius: 0.03
+      arm_r_link6:
+      - center:
+        - 0.0
+        - 0.0
+        - -0.0
+        radius: 0.03
+      - center:
+        - 0.0
+        - 0.0
+        - -0.0442500002682209
+        radius: 0.03
+      - center:
+        - 0.0
+        - 0.0
+        - -0.0885000005364418
+        radius: 0.03
+      arm_r_link7:
+      - center:
+        - 0.0
+        - 0.0
+        - -0.0
+        radius: 0.03
+      - center:
+        - 0.0
+        - 0.0
+        - -0.039999999999999994
+        radius: 0.03
+      - center:
+        - 0.0
+        - 0.0
+        - -0.07999999999999999
+        radius: 0.03
+      - center:
+        - 0.0
+        - 0.0
+        - -0.12
+        radius: 0.03
+      tcp:
+      - center:
+        - 0.0
+        - -0.065
+        - 0.055
+        radius: 0.014
+      - center:
+        - 0.0
+        - 0.065
+        - 0.055
+        radius: 0.014
+    collision_sphere_buffer: 0.003
+    self_collision_ignore:
+      arm_r_link1:
+      - arm_r_link2
+      - arm_r_link3
+      arm_r_link2:
+      - arm_r_link3
+      - arm_r_link4
+      arm_r_link3:
+      - arm_r_link4
+      - arm_r_link5
+      arm_r_link4:
+      - arm_r_link5
+      - arm_r_link6
+      arm_r_link5:
+      - arm_r_link6
+      - arm_r_link7
+      arm_r_link6:
+      - arm_r_link7
+      - tcp
+      arm_r_link7:
+      - tcp
+      tcp: []
+    self_collision_buffer:
+      arm_r_link1: 0.0
+      arm_r_link2: 0.0
+      arm_r_link3: 0.0
+      arm_r_link4: 0.0
+      arm_r_link5: 0.0
+      arm_r_link6: 0.0
+      arm_r_link7: 0.0
+      tcp: 0.0
+    use_global_cumul: true
+    mesh_link_names: []
+    cspace:
+      joint_names:
+      - arm_r_joint1
+      - arm_r_joint2
+      - arm_r_joint3
+      - arm_r_joint4
+      - arm_r_joint5
+      - arm_r_joint6
+      - arm_r_joint7
+      retract_config:
+      - 0.9983218908309937
+      - -0.00028762139845639467
+      - 0.0
+      - -2.199824333190918
+      - 0.0
+      - 0.0008868326549418271
+      - 0.000630904221907258
+      null_space_weight:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      cspace_distance_weight:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.5
+      - 2.0
+      max_acceleration: 4.0
+      max_jerk: 40.0

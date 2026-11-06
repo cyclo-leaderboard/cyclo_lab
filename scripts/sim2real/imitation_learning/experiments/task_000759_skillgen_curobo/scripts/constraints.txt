@@ -1,0 +1,5 @@
+packaging==23.0
+wheel==0.45.1
+lazy-loader==0.4
+torch==2.7.0
+numpy==1.26.0

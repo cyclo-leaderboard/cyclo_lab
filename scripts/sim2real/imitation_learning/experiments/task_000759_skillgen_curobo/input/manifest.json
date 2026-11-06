@@ -1,0 +1,11 @@
+{
+  "input/source_episode.npz": "96c20e58f14543a49977bb46ef1e2b31e6e50bacce974585f36a47bd520a7003",
+  "input/source_fk.npz": "510ca6074583bd8147ce82ac25b8a8b790c45b5eed383b11ce55e6fdca591c6c",
+  "input/seed.hdf5": "cef0f5739f978a3bb3b267cd1bc2be1426044839d19fd68e0db29f1b1d0093be",
+  "input/robot_probe.json": "318d1571b74a203e6ed384c0424fc2c6df48cfb2bacfa193ebab938dee64ed3c",
+  "input/provenance.json": "5714504c7e1a6954aa968ecf71e50b81dafaa05df81f111fee975d9a789d2ac5",
+  "task_000759/scene.json": "7a665bad0f28981aa7c7f543beb2566a481a4c3cb90582d1c7d1dff9c209a432",
+  "task_000759/sg2_right.urdf": "bbc2e482d933e9a3cbe780f3d25d420be37e76fc7bb71cb7ec1cd2bbf0bd448e",
+  "task_000759/sg2_right.yml": "c7860096eb0ad4b2f8fc721527d9349a7ef59e39cdc3c7f89887db895aec8bcd",
+  "task_000759/cucumber.usda": "c329a93f612d6529fc875f34c8ce852f519f214ace41093aa1caf1250170a899"
+}

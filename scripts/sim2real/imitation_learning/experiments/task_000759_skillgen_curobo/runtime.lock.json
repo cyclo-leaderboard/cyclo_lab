@@ -1,0 +1,12 @@
+{
+  "isaac_sim": "5.1.0",
+  "isaac_lab_commit": "3c6e67bb5c7ada942a6d1884ab69338f57596f77",
+  "cyclo_lab_reference_commit": "9a30be2",
+  "curobo_commit": "ebb71702f3f70e767f40fd8e050674af0288abe8",
+  "cuda_toolkit": "12.8",
+  "torch": "2.7.0+cu128",
+  "packaging": "23.0",
+  "tested_gpu": "NVIDIA GeForce RTX 5090",
+  "tested_compute_capability": "12.0",
+  "notes": "Driver, GPU, PhysX and randomized numerical planning can change generated paths. This locks implementation dependencies, not exact outcomes. Build toolkit may need a different TORCH_CUDA_ARCH_LIST on another GPU."
+}

@@ -1,0 +1,46 @@
+{
+  "task_id": "Task000759-Cucumber-SkillGen-SG2-v0",
+  "source_episode": 93,
+  "source_frames": 115,
+  "control_hz": 15,
+  "physics_hz": 240,
+  "table_top_m": 0.704,
+  "table_center_xy": [
+    0.78,
+    0.0
+  ],
+  "table_size_xy": [
+    1.0,
+    1.2
+  ],
+  "cucumber_center": [
+    0.5931754983303492,
+    -0.2317539207850372,
+    0.722
+  ],
+  "cucumber_yaw_rad": 0.4613070339726521,
+  "cucumber_radius_m": 0.018,
+  "cucumber_cylinder_length_m": 0.2,
+  "cucumber_mass_kg": 0.12,
+  "cucumber_static_friction": 1.2,
+  "cucumber_dynamic_friction": 1.0,
+  "tcp_offset": [
+    0,
+    0,
+    -0.2
+  ],
+  "contact_start_frame": 30,
+  "grasp_complete_frame": 52,
+  "skill_end_exclusive": 66,
+  "yaw_deltas_deg": [
+    -60,
+    -30,
+    0,
+    30,
+    60
+  ],
+  "geometry_note": "Approximate flattened convex cucumber mesh (236 x 42 x 39 mm) and table; not measured geometry or friction.",
+  "cucumber_asset": "/experiment/task_000759/cucumber.usda",
+  "cucumber_linear_damping": 0.1,
+  "cucumber_angular_damping": 0.1
+}

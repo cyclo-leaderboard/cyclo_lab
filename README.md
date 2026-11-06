@@ -524,6 +524,15 @@ python scripts/sim2real/imitation_learning/inference/inference_demos.py --task C
 
 ```
 
+## Task901 and Task759 experiment reproduction
+
+- [Task901 scene setup](scripts/sim2real/imitation_learning/tasks/catalog/task_000901/README.md)
+- [Task759 cucumber cuRobo experiment](scripts/sim2real/imitation_learning/experiments/task_000759_skillgen_curobo/README.md)
+  / [한국어 실행 안내](scripts/sim2real/imitation_learning/experiments/task_000759_skillgen_curobo/README.ko.md)
+
+Fetch Git LFS assets and initialize submodules after cloning. The cucumber guide
+includes isolated dependency builds and generation commands, not source videos.
+
 ## License
 
 This repository is licensed under the **Apache 2.0 License**. See [LICENSE](LICENSE) for details.
