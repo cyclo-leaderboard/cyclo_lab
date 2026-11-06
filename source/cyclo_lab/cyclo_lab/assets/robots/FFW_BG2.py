@@ -14,17 +14,54 @@
 #
 # Author: Taehyeong Kim
 
+import math
 from copy import deepcopy
+
+from isaacsim.core.utils.stage import get_current_stage
+from pxr import Usd, UsdPhysics
 
 from isaaclab.sim import UsdFileCfg, RigidBodyPropertiesCfg, ArticulationRootPropertiesCfg
 from isaaclab.assets.articulation import ArticulationCfg
 from isaaclab.actuators import ImplicitActuatorCfg
+from isaaclab.sim.spawners.from_files import from_files
+from isaaclab.sim.utils import clone, make_uninstanceable
 
 from cyclo_lab.assets.robots import CYCLO_LAB_ASSETS_DATA_DIR
 
+
+_BG2_HEAD_JOINT1_UPPER_LIMIT_RAD = 1.0
+
+
+@clone
+def spawn_bg2_with_deployed_head_limit(
+    prim_path, cfg, translation=None, orientation=None, **kwargs
+):
+    """Spawn BG2 with the deployed 1.0 rad head joint range."""
+    prim = from_files.spawn_from_usd(prim_path, cfg, translation, orientation, **kwargs)
+    stage = get_current_stage()
+    make_uninstanceable(prim_path, stage)
+    matches = []
+    for child_prim in Usd.PrimRange(stage.GetPrimAtPath(prim_path)):
+        if child_prim.GetName() != "head_joint1" or not child_prim.IsA(
+            UsdPhysics.RevoluteJoint
+        ):
+            continue
+        joint = UsdPhysics.RevoluteJoint(child_prim)
+        joint.GetUpperLimitAttr().Set(math.degrees(_BG2_HEAD_JOINT1_UPPER_LIMIT_RAD))
+        matches.append(str(child_prim.GetPath()))
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"Expected one BG2 head_joint1 below {prim_path}, found {matches}."
+        )
+    print(
+        "[BG2 head limits] set head_joint1 upper limit to "
+        f"{_BG2_HEAD_JOINT1_UPPER_LIMIT_RAD:.3f} rad."
+    )
+    return prim
+
 FFW_BG2_CFG = ArticulationCfg(
     spawn=UsdFileCfg(
-        usd_path=f"{CYCLO_LAB_ASSETS_DATA_DIR}/robots/FFW/FFW_BG2.usd",
+        usd_path=f"{CYCLO_LAB_ASSETS_DATA_DIR}/robots/FFW/FFW_BG2_soft_tips.usda",
         rigid_props=RigidBodyPropertiesCfg(
             disable_gravity=True,
             max_depenetration_velocity=5.0,
@@ -122,5 +159,6 @@ FFW_BG2_CFG = ArticulationCfg(
     }
 )
 
+FFW_BG2_CFG.spawn.func = spawn_bg2_with_deployed_head_limit
 FFW_BG2_WITHOUT_MIMIC_CFG = deepcopy(FFW_BG2_CFG)
-FFW_BG2_WITHOUT_MIMIC_CFG.spawn.usd_path = f'{CYCLO_LAB_ASSETS_DATA_DIR}/robots/FFW/FFW_BG2_without_mimic.usd'
+FFW_BG2_WITHOUT_MIMIC_CFG.spawn.usd_path = f'{CYCLO_LAB_ASSETS_DATA_DIR}/robots/FFW/FFW_BG2_without_mimic_soft_tips.usda'

@@ -14,6 +14,7 @@
 #
 # Author: Taehyeong Kim
 
+import math
 import re
 from copy import deepcopy
 
@@ -59,8 +60,8 @@ _SG2_DISTAL_GRIPPER_PHYSICS_MATERIAL = RigidBodyMaterialCfg(
     friction_combine_mode="max",
     restitution_combine_mode="min",
     # High-grip rubber contact surface on the soft-gripper distal fingers.
-    static_friction=2.5,
-    dynamic_friction=2.25,
+    static_friction=3.0,
+    dynamic_friction=2.7,
     restitution=0.0,
 )
 
@@ -79,8 +80,30 @@ _SG2_PHYSICS_LIFT_EFFORT_LIMIT = 5_000_000.0
 _SG2_PHYSICS_LIFT_STIFFNESS = 250_000.0
 _SG2_PHYSICS_LIFT_DAMPING = 5_000.0
 _SG2_BASE_CENTER_OF_MASS = (-0.07330104, 0.004389754, 0.05)
-_SG2_GRIPPER_VISUAL_GRAY = Gf.Vec3f(0.085, 0.085, 0.085)
-_SG2_GRIPPER_VISUAL_ROUGHNESS = 0.72
+_SG2_GRIPPER_VISUAL_GRAY = Gf.Vec3f(0.060, 0.060, 0.060)
+_SG2_GRIPPER_VISUAL_ROUGHNESS = 0.78
+_SG2_HEAD_JOINT1_UPPER_LIMIT_RAD = 1.0
+
+
+def _widen_sg2_head_joint1_limit(stage, prim_path: str) -> None:
+    """Match the deployed SG2 head_joint1 range."""
+    matches = []
+    for child_prim in _iter_robot_prims(stage, prim_path):
+        if child_prim.GetName() != "head_joint1" or not child_prim.IsA(
+            UsdPhysics.RevoluteJoint
+        ):
+            continue
+        joint = UsdPhysics.RevoluteJoint(child_prim)
+        joint.GetUpperLimitAttr().Set(math.degrees(_SG2_HEAD_JOINT1_UPPER_LIMIT_RAD))
+        matches.append(str(child_prim.GetPath()))
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"Expected one SG2 head_joint1 below {prim_path}, found {matches}."
+        )
+    print(
+        "[SG2 head limits] set head_joint1 upper limit to "
+        f"{_SG2_HEAD_JOINT1_UPPER_LIMIT_RAD:.3f} rad."
+    )
 
 
 def _iter_robot_prims(stage, prim_path: str):
@@ -295,6 +318,7 @@ def spawn_sg2_with_softgripper_physics(
     prim = from_files.spawn_from_usd(prim_path, cfg, translation, orientation, **kwargs)
     stage = get_current_stage()
     make_uninstanceable(prim_path, stage)
+    _widen_sg2_head_joint1_limit(stage, prim_path)
     _apply_sg2_softgripper_physics(stage, prim_path)
     _apply_sg2_gripper_visual_material(stage, prim_path)
     return prim
@@ -307,6 +331,7 @@ def spawn_sg2_with_base_physics(prim_path, cfg, translation=None, orientation=No
 
     stage = get_current_stage()
     make_uninstanceable(prim_path, stage)
+    _widen_sg2_head_joint1_limit(stage, prim_path)
     _remove_sg2_world_fixed_joint(stage, prim_path)
     _apply_sg2_world_articulation_root(stage, prim_path)
     _lower_sg2_base_center_of_mass(stage, prim_path)
@@ -324,13 +349,13 @@ def spawn_sg2_with_base_physics(prim_path, cfg, translation=None, orientation=No
 
 FFW_SG2_CFG = ArticulationCfg(
     spawn=UsdFileCfg(
-        usd_path=f"{CYCLO_LAB_ASSETS_DATA_DIR}/robots/FFW/FFW_SG2_softgripper.usd",
+        usd_path=f"{CYCLO_LAB_ASSETS_DATA_DIR}/robots/FFW/FFW_SG2_softgripper_soft_tips.usda",
         rigid_props=RigidBodyPropertiesCfg(
             disable_gravity=True,
             max_depenetration_velocity=5.0,
         ),
         articulation_props=ArticulationRootPropertiesCfg(
-            enabled_self_collisions=True,
+            enabled_self_collisions=False,
             solver_position_iteration_count=32,
             solver_velocity_iteration_count=1,
         ),
