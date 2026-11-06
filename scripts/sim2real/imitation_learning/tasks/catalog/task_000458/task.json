@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "000458",
+  "environment": "showroom",
+  "robot": "FFW-SG2",
+  "kind": "task",
+  "default_env_id": "Cyclo-Real-Showroom-Task000458-FFW-SG2-v0",
+  "variants": {
+    "random": "Cyclo-Real-Showroom-Task000458-Random-FFW-SG2-v0",
+    "mimic_seed": "Cyclo-Real-Showroom-Task000458-Mimic-Seed-FFW-SG2-v0",
+    "mimic_generate": "Cyclo-Real-Showroom-Task000458-Mimic-Generate-FFW-SG2-v0"
+  }
+}
