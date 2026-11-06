@@ -82,3 +82,13 @@ Do not proceed to random generation until the nominal Mimic replay is acceptable
 their own simulator. No ROS/Zenoh bridge, real robot connection, or source writes.
 State/action HDF5 excludes cameras; generated data is not visually certified
 until a separate saved-state rendering is reviewed.
+
+## Scene profile compatibility (2026-11-06)
+
+The parent Task901 Environment/PlateHolder defaults now use the latest 0.695 m
+table/recess5mm profile. This **archived episode6 pilot intentionally retains**
+its original 0.700 m table and tip-tip-contact physics (50 exclusions removed).
+`env_cfg.py` explicitly restores the historical room, robot spawner and holder Z;
+reference plate assets, initial coordinates, EEF poses and slot targets stay in
+their original frame. Do not label this old seed as a latest-profile rollout.
+New demonstrations/annotations and success testing are needed for that claim.

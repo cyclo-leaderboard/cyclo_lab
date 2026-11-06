@@ -14,19 +14,21 @@ from isaaclab.envs.mdp.events import reset_scene_to_default
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.utils import configclass
 from cyclo_lab.assets.robots.FFW_SG2 import FFW_SG2_CFG
+from _cyclo_task000901_physics import PROFILE, spawn_latest_robot
 from cyclo_lab.assets.sensors.ffw_sg2_cameras import (
     make_ffw_sg2_head_camera_cfg,
     make_ffw_sg2_wrist_camera_cfg,
 )
 _ROOT=Path(__file__).resolve().parent
-TABLE_TOP_Z_M=.70
-ROOM_USD_PATH=str(_ROOT/'runtime/data/white_room_task000901_visual_v2.usda')
+TABLE_TOP_Z_M=PROFILE['table_top_z_m']
+ROOM_USD_PATH=str(_ROOT/'runtime/data/white_room_latest.usda')
 LIGHTING_USD_PATH=str(_ROOT/'runtime/data/lighting_task000901_visual_v2.usda')
 PRODUCE_USD_DIR=_ROOT/'runtime/data/objects/visual_v2/produce'
 COOKWARE_USD_DIR=_ROOT/'runtime/data/objects/visual_v2/cookware'
-PLATE_USD_DIR=_ROOT/'runtime/data/objects/plates_v1'
+PLATE_USD_DIR=_ROOT/'runtime/data/objects/plates_latest'
 PLATE_HOLDER_USD_PATH=_ROOT/'runtime/data/objects/plate_holder_v1/wood_plate_holder.usda'
-PLATE_HOLDER_ROOM_USD_PATH=_ROOT/'runtime/data/white_room_plate_holder.usda'
+PLATE_HOLDER_ROOM_USD_PATH=_ROOT/'runtime/data/white_room_plate_holder_latest.usda'
+LEGACY_PLATE_HOLDER_ROOM_USD_PATH=_ROOT/'runtime/data/white_room_plate_holder.usda'
 PLATE_HOLDER_LIGHTING_USD_PATH=_ROOT/'runtime/data/white_room_plate_holder_lighting.usda'
 
 # Live 1050 SG2 state recaptured 2026-11-02. Wheel encoder positions are not
@@ -92,12 +94,15 @@ class Task000901WristCamera(Camera):
         rgb[env_ids] = corrected.clamp_(0, 255).to(rgb.dtype)
 
 
-def make_task000901_sg2_cfg():
+def make_task000901_sg2_cfg(*, latest: bool = True):
     robot = deepcopy(FFW_SG2_CFG)
     robot.prim_path = "{ENV_REGEX_NS}/Robot"
     robot.init_state.pos = SG2_ROOT_POS
     robot.init_state.rot = SG2_ROOT_ROT
     robot.init_state.joint_pos.update(SG2_REFERENCE_JOINT_POS)
+    if latest:
+        robot.spawn.func = spawn_latest_robot
+        robot.spawn.articulation_props.enabled_self_collisions = True
     return robot
 
 
@@ -148,22 +153,22 @@ class Task000901SceneCfg(InteractiveSceneCfg):
     cucumber=AssetBaseCfg(
         prim_path='{ENV_REGEX_NS}/Cucumber',
         spawn=sim_utils.UsdFileCfg(usd_path=str(PRODUCE_USD_DIR/'cucumber/cucumber.usd')),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(-0.47020769846105787, 0.2765905432369996, 0.7002), rot=(0.9754102616434104, 0.0, 0.0, 0.22039696341087303)),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(-0.47020769846105787, 0.2765905432369996, TABLE_TOP_Z_M+0.0002), rot=(0.9754102616434104, 0.0, 0.0, 0.22039696341087303)),
     )
     onion=AssetBaseCfg(
         prim_path='{ENV_REGEX_NS}/Onion',
         spawn=sim_utils.UsdFileCfg(usd_path=str(PRODUCE_USD_DIR/'onion/onion.usd')),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(-0.4191879324760945, 0.18079859430013154, 0.7002), rot=(1.0, 0.0, 0.0, 0.0)),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(-0.4191879324760945, 0.18079859430013154, TABLE_TOP_Z_M+0.0002), rot=(1.0, 0.0, 0.0, 0.0)),
     )
     pot=AssetBaseCfg(
         prim_path='{ENV_REGEX_NS}/Pot',
         spawn=sim_utils.UsdFileCfg(usd_path=str(COOKWARE_USD_DIR/'pot/pot.usd')),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(-0.5348868417584767, -0.11074235415490319, 0.7002), rot=(0.969739644355927, 0.0, 0.0, -0.24414139789155043)),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(-0.5348868417584767, -0.11074235415490319, TABLE_TOP_Z_M+0.0002), rot=(0.969739644355927, 0.0, 0.0, -0.24414139789155043)),
     )
     lid=AssetBaseCfg(
         prim_path='{ENV_REGEX_NS}/Lid',
         spawn=sim_utils.UsdFileCfg(usd_path=str(COOKWARE_USD_DIR/'lid/lid.usd')),
-        init_state=AssetBaseCfg.InitialStateCfg(pos=(-0.5162941809369388, -0.3588624974411967, 0.7002), rot=(1.0, 0.0, 0.0, 0.0)),
+        init_state=AssetBaseCfg.InitialStateCfg(pos=(-0.5162941809369388, -0.3588624974411967, TABLE_TOP_Z_M+0.0002), rot=(1.0, 0.0, 0.0, 0.0)),
     )
     robot=make_task000901_sg2_cfg()
     cam_head=make_task000901_head_camera_cfg()
@@ -209,7 +214,7 @@ def spawn_task000901_plate(prim_path, cfg, translation=None, orientation=None, *
     material_path = f"{prim_path}/PlatePhysicsMaterial"
     # Starting simulation parameters, not measured real friction coefficients.
     material = sim_utils.RigidBodyMaterialCfg(
-        static_friction=0.6, dynamic_friction=0.45, restitution=0.0,
+        static_friction=PROFILE['plate_friction'][0], dynamic_friction=PROFILE['plate_friction'][1], restitution=0.0,
         friction_combine_mode="max", restitution_combine_mode="min",
     )
     material.func(material_path, material)
@@ -219,7 +224,7 @@ def spawn_task000901_plate(prim_path, cfg, translation=None, orientation=None, *
 
 
 def _plate_cfg(name: str, color: str, xy: tuple[float, float]) -> RigidObjectCfg:
-    """Share Task901's 1.0 mm plate profile and convex sectors through a color-only USD layer."""
+    """Latest d185/b160/a73, 1 mm shell, through a color-only USD layer."""
     return RigidObjectCfg(
         prim_path=f'{{ENV_REGEX_NS}}/{name}',
         spawn=sim_utils.UsdFileCfg(
@@ -276,7 +281,7 @@ class Task000901PlateHolderEnvCfg(Task000901EnvCfg):
 
     def __post_init__(self):
         super().__post_init__()
-        # Thin 2 mm plates need finer contact integration than the visual scene.
+        # Thin 1 mm plates need finer contact integration than the visual scene.
         self.sim.dt = 1 / 240
         self.sim.physx.enable_ccd = True
         self.decimation = 4

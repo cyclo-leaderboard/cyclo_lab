@@ -7,6 +7,15 @@ _ROOT=Path(__file__).resolve().parent
 
 def register_environments():
     import gymnasium as gym
+    for module_name, filename in (
+        ('_cyclo_task000901_contact', 'contact_candidate.py'),
+        ('_cyclo_task000901_physics', 'latest_physics.py'),
+    ):
+        if module_name not in sys.modules:
+            spec = importlib.util.spec_from_file_location(module_name, _ROOT/filename)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
     name='_cyclo_task000901_scene'
     if name not in sys.modules:
         spec=importlib.util.spec_from_file_location(name,_ROOT/'scene.py')
@@ -42,4 +51,6 @@ def mimic_data_generator_class():
     return importlib.import_module('_cyclo_task000901_mimic.generator').Task901DataGenerator
 
 def provenance():
-    return {'id':TASK_ID,'environment':ENVIRONMENT,'source_task':'000400','table_top_z_m':0.70,'robot':'FFW-SG2','reference_robot':'1050','tag_family':'tag36h11','tag_detection_square_m':0.04,'tag_positions':'camera_estimated','status':'setup'}
+    import json
+    profile = json.loads((_ROOT/'physics_profile.json').read_text())
+    return {'id':TASK_ID,'environment':ENVIRONMENT,'source_task':'000400','table_top_z_m':profile['table_top_z_m'],'physics_profile':profile['id'],'mimic_reference_profile':'archived_episode6_table700mm_tip_contact','robot':'FFW-SG2','reference_robot':'1050','tag_family':'tag36h11','tag_detection_square_m':0.04,'tag_positions':'camera_estimated','status':'setup'}

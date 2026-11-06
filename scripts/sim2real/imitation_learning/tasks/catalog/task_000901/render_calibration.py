@@ -14,6 +14,7 @@ try:
  from local_plugins import load_for_task
  name='Cyclo-Real-WhiteRoom-Task000901-PlateHolder-FFW-SG2-v0'
  bundle=load_for_task(name);bundle.register_environments()
+ from _cyclo_task000901_scene import TABLE_TOP_Z_M
  assert name in gym.registry
  cfg=parse_env_cfg(name,device='cuda:0',num_envs=1)
  print('CFG_REFERENCE_JOINTS',json.dumps({k:v for k,v in cfg.scene.robot.init_state.joint_pos.items() if k in ('lift_joint','arm_l_joint1','arm_r_joint1','head_joint1','head_joint2')}),flush=True)
@@ -89,7 +90,7 @@ try:
     if a:a.Set(0.)
  bbox=UsdGeom.BBoxCache(Usd.TimeCode.Default(),['default','render'])
  table=bbox.ComputeWorldBound(stage.GetPrimAtPath('/World/envs/env_0/WhiteRoom/WhiteTable/Top')).ComputeAlignedBox()
- tmin=np.array(table.GetMin());tmax=np.array(table.GetMax());assert abs(tmax[2]-.70)<1e-5
+ tmin=np.array(table.GetMin());tmax=np.array(table.GetMax());assert abs(tmax[2]-TABLE_TOP_Z_M)<1e-5
  report={'env_id':'Cyclo-Real-WhiteRoom-Task000901-PlateHolder-FFW-SG2-v0','table_top_z_m':float(tmax[2]),'objects':{},'no_hardware_commands':True,'sim_body_poses':body_report,'head_focal_px':head_focal_px,'head_offset_pos':list(head.cfg.offset.pos),'head_offset_rot':list(head.cfg.offset.rot)}
  report['reference_joints_verified']={key:joint_state[key] for key in ('lift_joint','arm_l_joint1','arm_l_joint4','arm_r_joint1','arm_r_joint4','head_joint1')}
  panel=stage.GetPrimAtPath('/World/envs/env_0/WhiteRoom/WhiteRoomPartitionWall/Panel_04')

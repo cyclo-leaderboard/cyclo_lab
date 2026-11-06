@@ -18,7 +18,10 @@ from cyclo_lab.manager_based.manipulation.common import configure_ffw_sg2_mimic_
 from cyclo_lab.manager_based.manipulation.showroom.config.ffw_sg2.tasks.common import (
     EpisodicShowroomObservationsCfg, make_eef_frame,
 )
-from _cyclo_task000901_scene import Task000901PlateHolderEnvCfg, Task000901PlateHolderSceneCfg
+from _cyclo_task000901_scene import (
+    Task000901PlateHolderEnvCfg, Task000901PlateHolderSceneCfg,
+    LEGACY_PLATE_HOLDER_ROOM_USD_PATH, make_task000901_sg2_cfg,
+)
 
 from .prepare_reference import PHASES, TCP_Z
 
@@ -183,6 +186,12 @@ class Task901BimanualSeedEnvCfg(Task000901PlateHolderEnvCfg, MimicEnvCfg):
         if not path.exists():
             raise FileNotFoundError('First run task_000901/mimic/prepare_reference.py')
         provenance = json.loads(path.read_text())
+        # Archived episode6 was generated at 0.700 m with tip-tip contact.
+        # Never silently replay its seed in the latest 0.695 m / recess5mm scene.
+        self.scene.environment.spawn.usd_path = str(LEGACY_PLATE_HOLDER_ROOM_USD_PATH)
+        self.scene.robot = make_task000901_sg2_cfg(latest=False)
+        holder = self.scene.plate_holder.init_state
+        holder.pos = (*holder.pos[:2], .7002)
         manifest = json.loads((REFERENCE/'input/input_manifest.json').read_text())
         import numpy as np
         data = np.load(REFERENCE/'input/aligned_replay.npz')

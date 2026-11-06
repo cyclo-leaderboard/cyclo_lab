@@ -1,0 +1,23 @@
+{
+  "id": "task901_automation_20261106_recess5mm_table_minus5mm",
+  "source": "task000901_real_sim_replay/automation",
+  "table_top_z_m": 0.695,
+  "table_height_offset_m": -0.005,
+  "contact_mode": "recess5mm",
+  "tip_recess_max_m": 0.005,
+  "self_collision_enabled": true,
+  "active_tip_proxy_pieces": 20,
+  "opposing_tip_filtered_pairs_retained": 50,
+  "joint24_upper_limit_rad": 1.1,
+  "joint24_mimic_mode": "usd_original",
+  "distal_friction": [4.0, 3.5],
+  "plate_friction": [0.6, 0.45],
+  "holder_friction": "asset_default",
+  "plate_profile": "gentler_side_d185_b160_a73_v3",
+  "source_sha256": {
+    "contact_candidate.py": "bfa7999530f0dadf8d8f9180b95475c0f6124cb4b9398188c310277627cdebd4",
+    "render_physics_replay.py": "4c9f26f4c242223070804be212594207a7d46426aba8a5b7beb3d9b1b57f3a97",
+    "real2sim901.py": "6b7fbbc9c5ce2c371aa157c8632763e9219d0efac5597b8b8fe5d0817437f70b"
+  },
+  "scope": "Latest automation settings, not the older episode_010 or first-frame camera fit. Rigid collision approximation, not measured rubber compliance or a task-success certification."
+}
