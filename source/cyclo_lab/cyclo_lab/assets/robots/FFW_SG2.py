@@ -80,8 +80,6 @@ _SG2_PHYSICS_LIFT_EFFORT_LIMIT = 5_000_000.0
 _SG2_PHYSICS_LIFT_STIFFNESS = 250_000.0
 _SG2_PHYSICS_LIFT_DAMPING = 5_000.0
 _SG2_BASE_CENTER_OF_MASS = (-0.07330104, 0.004389754, 0.05)
-_SG2_GRIPPER_VISUAL_GRAY = Gf.Vec3f(0.060, 0.060, 0.060)
-_SG2_GRIPPER_VISUAL_ROUGHNESS = 0.78
 _SG2_HEAD_JOINT1_UPPER_LIMIT_RAD = 1.0
 
 
@@ -273,20 +271,13 @@ def _apply_sg2_softgripper_physics(stage, prim_path: str) -> None:
 
 
 def _apply_sg2_gripper_visual_material(stage, prim_path: str) -> None:
-    """Bind one shared dark-gray material to all SG2 gripper visual meshes."""
+    """Bind the robot arm's authored material to every gripper visual mesh."""
 
-    material_path = f"{prim_path}/Looks/SG2GripperDarkGray"
-    material = UsdShade.Material.Define(stage, material_path)
-    shader = UsdShade.Shader.Define(stage, f"{material_path}/Shader")
-    shader.CreateIdAttr("UsdPreviewSurface")
-    shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(
-        _SG2_GRIPPER_VISUAL_GRAY
-    )
-    shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
-    shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(
-        _SG2_GRIPPER_VISUAL_ROUGHNESS
-    )
-    material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+    material_path = f"{prim_path}/ffw_sg2_follower/Looks/DefaultMaterial"
+    material_prim = stage.GetPrimAtPath(material_path)
+    if not material_prim.IsValid() or not material_prim.IsA(UsdShade.Material):
+        raise RuntimeError(f"SG2 arm material was not found: {material_path}")
+    material = UsdShade.Material(material_prim)
 
     bound_paths = []
     for child_prim in _iter_robot_prims(stage, prim_path):
@@ -304,8 +295,8 @@ def _apply_sg2_gripper_visual_material(stage, prim_path: str) -> None:
     if not bound_paths:
         raise RuntimeError(f"No SG2 gripper visual meshes found below {prim_path}.")
     print(
-        "[SG2 gripper visual] bound dark-gray material to "
-        f"{len(bound_paths)} visual meshes."
+        "[SG2 gripper visual] bound the authored arm material to "
+        f"{len(bound_paths)} visual meshes: {material_path}"
     )
 
 
