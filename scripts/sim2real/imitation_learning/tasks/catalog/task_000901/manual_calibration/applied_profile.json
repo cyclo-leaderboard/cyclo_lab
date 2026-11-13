@@ -1,0 +1,72 @@
+{
+  "schema": "task901.manual-calibration.v1",
+  "robot": {
+    "x_m": 0.0,
+    "y_m": 0.0,
+    "yaw_deg": 0.0
+  },
+  "cameras": {
+    "head": {
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "roll_deg": 0.0,
+      "pitch_deg": 0.0,
+      "yaw_deg": 0.0,
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0,
+      "exposure": 1.0,
+      "highlight_knee": 0.0,
+      "highlight_shoulder": 0.0
+    },
+    "wrist_left": {
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "roll_deg": 0.0,
+      "pitch_deg": 0.0,
+      "yaw_deg": 0.0,
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0,
+      "exposure": 1.0,
+      "highlight_knee": 0.0,
+      "highlight_shoulder": 0.0
+    },
+    "wrist_right": {
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "roll_deg": 0.0,
+      "pitch_deg": 0.0,
+      "yaw_deg": 0.0,
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0,
+      "exposure": 1.0,
+      "highlight_knee": 0.0,
+      "highlight_shoulder": 0.0
+    }
+  },
+  "lights": {
+    "main": {
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "roll_deg": 0.0,
+      "pitch_deg": 0.0,
+      "yaw_deg": 0.0,
+      "intensity": 1.0
+    },
+    "right": {
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "roll_deg": 0.0,
+      "pitch_deg": 0.0,
+      "yaw_deg": 0.0,
+      "intensity": 1.0
+    }
+  }
+}

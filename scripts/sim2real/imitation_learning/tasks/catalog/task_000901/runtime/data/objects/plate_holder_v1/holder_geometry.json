@@ -4,8 +4,9 @@
     "length_m": 0.295,
     "width_m": 0.12,
     "height_m": 0.09,
-    "base_rail_square_m": 0.017,
-    "peg_diameter_m": 0.009,
+    "base_rail_square_m": 0.0175,
+    "peg_diameter_m": 0.007,
+    "peg_height_m": 0.075,
     "peg_count_each_row": 7,
     "peg_center_spacing_m": 0.045
   },
@@ -21,19 +22,27 @@
     ],
     "peg_center_end_margin_m": 0.012499999999999983,
     "rail_centers_y_m": [
-      -0.0515,
-      0.0515
+      -0.05125,
+      0.05125
     ],
+    "rail_inner_clear_width_m": 0.08499999999999999,
     "rail_outer_width_m": 0.12,
+    "peg_bottom_z_m": 0.015,
+    "peg_rail_insertion_m": 0.0025000000000000022,
     "peg_top_z_m": 0.09,
     "crossbrace_radius_m_visual_estimate": 0.005,
     "crossbrace_x_m_visual_estimate": [
       -0.1125,
       0.1125
-    ]
+    ],
+    "peg_clear_gap_m": 0.038
   },
   "source_photos": [
     "head.jpg",
     "right.jpg"
-  ]
+  ],
+  "simulation_override": {
+    "original_measured_peg_diameter_m": 0.009,
+    "peg_diameter_m": 0.007
+  }
 }

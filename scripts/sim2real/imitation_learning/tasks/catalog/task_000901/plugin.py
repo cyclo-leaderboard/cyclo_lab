@@ -46,4 +46,4 @@ def mimic_data_generator_class():
     return importlib.import_module('_cyclo_task000901_mimic.generator').Task901DataGenerator
 
 def provenance():
-    return {'id':TASK_ID,'environment':ENVIRONMENT,'source_task':'000400','table_top_z_m':0.70,'robot':'FFW-SG2','reference_robot':'1050','tag_family':'tag36h11','tag_detection_square_m':0.04,'tag_positions':'camera_estimated','status':'setup'}
+    return {'id':TASK_ID,'environment':ENVIRONMENT,'source_task':'000400','table_top_z_m':0.69,'robot':'FFW-SG2','reference_robot':'1050','tag_family':'tag36h11','tag_detection_square_m':0.04,'tag_positions':'camera_estimated','status':'setup'}
